@@ -106,5 +106,38 @@ class ChaperoneAction {
             $this->ruleSetArray[] = ChaperoneRuleSet::loadById($ruleRow['rule_set']);
         }
     }
+    
+    public function ruleSetCheck(ChaperoneContextRuleSet $crsObj, $contextArray=array()) {
+        /*
+         * Checks whether the passed Context RuleSet can be satisfied by the Action RuleSet.
+         * $contextArray is passed because an Action Context RuleSet potentially needs to be created for the test
+         */
+
+        // If there are no RuleSets, permission is granted
+        if (count($this->ruleSetArray) === 0) return TRUE;
+
+        // Otherwise, iterate through RuleSets, testing the passed Context RuleSet against each until we get one that grants permission
+        foreach ($this->ruleSetArray AS $actionRuleSetObj) {
+            try {
+                $acrsObj = $actionRuleSetObj->getContextRuleSet($contextArray);
+
+                // If the passed Context RuleSet is a subset of the Action Context RuleSet, permission is granted
+                if ($acrsObj->isSubsetOf($crsObj)) {
+                    echo '<pre>';
+                    var_dump($actionRuleSetObj->getContextRuleSet($contextArray));
+                    var_dump($crsObj);
+                    echo '</pre>';
+                    return TRUE;
+                }
+                unset($acrsObj);
+                
+            // Assume that exceptions mean permission is denied for this ruleset (most likely Action RuleSets not having sufficient context)
+            } catch(Exception $e) {
+            }
+        }
+
+        // Permission denied
+        return FALSE;
+    }
 }
 ?>

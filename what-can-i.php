@@ -45,22 +45,31 @@ foreach ($actionArray AS $actionObj) {
         if (!$crsObj->isRuleFor($contextItem))
             continue;
 
-        // Grab the context item rule from the RCRS
-
         // Are there any rules for the action
         $actionRuleSetArray = $actionObj->getRuleSets();
         if (count($actionRuleSetArray) > 0) {
             foreach ($actionRuleSetArray AS $actionRuleSetObj) {
                 
-                echo '<pre>';
-                var_dump($crsObj);
+                // If the Action RuleSet has the context item as a wildcard, use the Context RuleSet as is
+                if ($actionRuleSetObj->isWildcardRuleFor($contextItem)) {
+                    $acrsObj = $actionRuleSetObj->getContextRuleSet($contextArray);
 
-                // If the context item is in the Action RuleSet, we need to create a replacement
-                // CRS for checking
+                // If the Action RuleSet does not have the context item as a wildcard, create a Context RuleSet that excludes it
+                // (it may not be there anyway)
+                } else {
+                    $acrsObj = $actionRuleSetObj->getContextRuleSetExceptFor($contextItem, $contextArray);
+                }
                 
-                // If the context item is not in the action ruleset, we use the CRS for checking
-                var_dump($actionRuleSetObj->getContextRuleSetExceptFor($contextItem, $contextArray));
+                // Ensure the Action CRS can be satisfied by the Role CRS
+                if (!$acrsObj->isSubsetOf($crsObj)) continue;
+
+                echo '<pre>';
+                var_dump($crsObj->getContextRuleValue($contextItem));
                 echo '</pre>';
+
+                // Grab the context item rule from the RCRS.  We can move on to the next action because we've got
+                // all we need from this RCRS
+
             }
         }
     }

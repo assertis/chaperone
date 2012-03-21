@@ -108,6 +108,14 @@ class ChaperoneRuleSet {
 
 
     /*
+     * Helper method.  Returns Boolean indicating whether a wildcard Rule exists for the given Context Item
+     */
+    public function isWildcardRuleFor($contextItem) {
+        return (array_key_exists($contextItem, $this->ruleArray) AND $this->ruleArray[$contextItem]);
+    }
+    
+    
+    /*
      * Helper method for getting rules based on their wildcard flag
      */
     private function getMatchingRules($matchWildcard) {

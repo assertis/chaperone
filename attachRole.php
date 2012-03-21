@@ -1,10 +1,11 @@
 <?php
-/*
- * This code tests whether a particular role is able to perform a particular action in a particular context
- */
 require_once('classes/Chaperone.php');
 require_once('classes/ChaperoneSession.php');
+
 /*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 define('U_DATABASE_HOST', 'localhost');
 define('U_DATABASE_USERNAME', 'chaptest');
 define('U_DATABASE_PASSWORD', 'chaptest');
@@ -17,17 +18,11 @@ try {
     die($e);
 }
 
-// Get session and attach a couple of roles
-*/
 $session = ChaperoneSession::getSession();
-/*
+$session->clear();
 $session->attachRole('tmcadmin', array('tmc'=>'abc'));
 $session->attachRole('tmcadmin', array('tmc'=>'xyz'));
-*/
-// Action and context to be tested
-$action = 'b2b.order_resend';
-$contextArray = array('tmc'=>'xyz', 'business'=>123, 'email'=>'fred');
 
-// Test it
-echo ($session->actionCheck($action, $contextArray)) ? 'Allowed' : 'Denied';
+$x = serialize($session);
+var_dump($x);
 ?>
