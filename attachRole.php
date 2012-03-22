@@ -1,7 +1,5 @@
 <?php
 require_once('classes/Chaperone.php');
-require_once('classes/ChaperoneSession.php');
-
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -13,16 +11,17 @@ define('U_DATABASE_PASSWORD', 'chaptest');
 try {
     $pdo = new PDO('mysql:host='.U_DATABASE_HOST, U_DATABASE_USERNAME, U_DATABASE_PASSWORD);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    Chaperone::setPDO($pdo);
 } catch (Exception $e) {
     die($e);
 }
 
-$session = ChaperoneSession::getSession();
-$session->clear();
-$session->attachRole('tmcadmin', array('tmc'=>'abc'));
-$session->attachRole('tmcadmin', array('tmc'=>'xyz'));
+Chaperone::setNamespace('b2b');
+Chaperone::setPDO($pdo);
+Chaperone::clearSession();
+Chaperone::setEmailAddress('fred');
+Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>123));
+Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>456));
+Chaperone::attachRole('tmcadmin', array('tmc'=>'xyz'));
 
-$x = serialize($session);
-var_dump($x);
+echo 'Attached';
 ?>

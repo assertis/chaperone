@@ -52,11 +52,15 @@ class ChaperoneAction {
         $stmt->execute();
 
         $rowCount = $stmt->rowCount();
-        if ($rowCount === 0)
-            throw new Exception('Action #"'.$id.'" not found');
-        if ($rowCount > 1)
-            throw new Exception('Multiple instances of Action #"'.$id.'" found');   // Should never happen!
-    
+        if ($rowCount === 0) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Action #"'.$id.'" not found');
+        }
+        if ($rowCount > 1) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Multiple instances of Action #"'.$id.'" found');   // Should never happen!
+        }
+
         // Load data and create object
         $actionRow = $stmt->fetch(PDO::FETCH_ASSOC);
         $actionObj = new ChaperoneAction();
@@ -86,9 +90,11 @@ class ChaperoneAction {
         require_once('ChaperoneRuleSet.php');
         
         // Sanity checking
-        if ($this->id === NULL)
-            throw new Exception('Cannot load Rule Sets - Action ID is not set');
-        
+        if ($this->id === NULL) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Cannot load Rule Sets - Action ID is not set');
+        }
+   
         $pdo = Chaperone::getPDO();
         $schema = Chaperone::getSchema();
         $sql = 'SELECT      crs.id AS rule_set
@@ -106,38 +112,92 @@ class ChaperoneAction {
             $this->ruleSetArray[] = ChaperoneRuleSet::loadById($ruleRow['rule_set']);
         }
     }
-    
-    public function ruleSetCheck(ChaperoneContextRuleSet $crsObj, $contextArray=array()) {
-        /*
-         * Checks whether the passed Context RuleSet can be satisfied by the Action RuleSet.
-         * $contextArray is passed because an Action Context RuleSet potentially needs to be created for the test
-         */
 
-        // If there are no RuleSets, permission is granted
+
+    /*
+     * Checks whether the passed Role Context RuleSet can be satisfied by the Action's RuleSet(s)
+     * If there are no RuleSets attached to the action, permission is granted
+     * $contextArray is passed because an Action Context RuleSet potentially needs to be created for the test
+     * 
+     * @param   ChaperoneContextRuleSet     $rcrsObj
+     * @param   array (optional)            $contextArray
+     * @returns boolean
+     */
+    public function isRoleContextRuleSetAllowed(ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
+
+        // If there are no Action RuleSets, permission is granted
         if (count($this->ruleSetArray) === 0) return TRUE;
 
-        // Otherwise, iterate through RuleSets, testing the passed Context RuleSet against each until we get one that grants permission
+        // Otherwise, iterate through Action RuleSets, testing the passed Role Context RuleSet against each until we get one that grants permission
         foreach ($this->ruleSetArray AS $actionRuleSetObj) {
             try {
                 $acrsObj = $actionRuleSetObj->getContextRuleSet($contextArray);
 
                 // If the passed Context RuleSet is a subset of the Action Context RuleSet, permission is granted
-                if ($acrsObj->isSubsetOf($crsObj)) {
+                if ($acrsObj->isSubsetOf($rcrsObj)) {
                     echo '<pre>';
                     var_dump($actionRuleSetObj->getContextRuleSet($contextArray));
-                    var_dump($crsObj);
+                    var_dump($rcrsObj);
                     echo '</pre>';
                     return TRUE;
                 }
                 unset($acrsObj);
                 
             // Assume that exceptions mean permission is denied for this ruleset (most likely Action RuleSets not having sufficient context)
-            } catch(Exception $e) {
+            } catch(ChaperoneException $e) {
             }
         }
 
         // Permission denied
         return FALSE;
+    }
+
+    /*
+     * This method is related to isRoleContextRuleSetAllowed(), but instead of asking whether you have
+     * permission to perform the current action for a given Context RuleSet within a given Context,
+     * this method allows you to ask for a list of permitted items within a given Context Item.
+     * It is called by ChaperoneSession->getContextList() for each matching Action object.
+     */
+    public function getContextValueList($contextItem, ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
+
+        require_once('ChaperoneContextValueList.php');
+        $contextValueListObj = new ChaperoneContextValueList();
+
+        // If there are no Action RuleSets, there is nothing to merge
+        if (count($this->ruleSetArray) === 0)
+            return $contextValueListObj;
+
+        // Otherwise, iterate through Action RuleSets, testing the passed Role Context RuleSet against each
+        foreach ($this->ruleSetArray AS $actionRuleSetObj) {
+
+            // If the Action RuleSet has the context item as a wildcard, use the Context RuleSet as is
+            if ($actionRuleSetObj->isWildcardRuleFor($contextItem)) {
+                $acrsObj = $actionRuleSetObj->getContextRuleSet($contextArray);
+
+            // If the Action RuleSet does not have the context item as a wildcard, create a Context RuleSet that excludes it
+            // (it may not be there anyway)
+            } else {
+                $acrsObj = $actionRuleSetObj->getContextRuleSetExceptFor($contextItem, $contextArray);
+            }
+            
+            // If the Action Context RuleSet is not a subset of the Role Context RuleSet, look at the next ruleset
+            if (!$acrsObj->isSubsetOf($rcrsObj)) continue;
+
+            // Get the context rule value.  It will be either NULL (denoting wildcard) or a specific value
+            $contextValue = $rcrsObj->getContextRuleValue($contextItem);
+            
+            // If it's a wildcard, we can just return a Context List with a wildcard.  No need to look any further
+            if ($contextValue === NULL) {
+                $contextValueListObj->addWildcard();
+                return $contextValueListObj;
+            }
+
+            // It's a specific value, so we add it to the Context List and continue
+            $contextValueListObj->addItem($contextValue);
+        }
+
+        // Return what we've got.  It should always be a list (possibly empty), but never a wildcard
+        return $contextValueListObj;
     }
 }
 ?>

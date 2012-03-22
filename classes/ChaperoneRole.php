@@ -31,7 +31,13 @@ class ChaperoneRole {
     public function loadByName($roleName) {
 
         // Get namespace and resource name
-        $resourceArray = Chaperone::splitResourceName($roleName);
+        require_once('ChaperoneNamespace.php');
+        $resourceArray = ChaperoneNamespace::splitResourceName($roleName);
+        $namespace = $resourceArray['namespace'];
+        $resourceName = $resourceArray['resourceName'];
+        
+        // Look up namespace ID
+        $namespaceId = ChaperoneNamespace::getIdForName($namespace);
 
         // Look up the Role in the database
         $pdo = Chaperone::getPDO();
@@ -41,22 +47,26 @@ class ChaperoneRole {
                 WHERE   namespace = :namespace
                 AND     role = :role';
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':namespace', $resourceArray['namespaceId']);
-        $stmt->bindValue(':role', $resourceArray['resourceName']);
+        $stmt->bindValue(':namespace', $namespaceId);
+        $stmt->bindValue(':role', $resourceName);
         
         $stmt->execute();
         $rowCount = $stmt->rowCount();
-        if ($rowCount === 0)
-            throw new Exception('Role "'.$roleName.'" not found');
-        if ($rowCount > 1)
-            throw new Exception('Multiple instances of Role "'.$roleName.'" found');
+        if ($rowCount === 0) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Role "'.$roleName.'" not found');
+        }
+        if ($rowCount > 1) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Multiple instances of Role "'.$roleName.'" found');
+        }
 
         // Load data and create object
         $roleRow = $stmt->fetch(PDO::FETCH_ASSOC);
         $roleObj = new ChaperoneRole();
         $roleObj->id = (int)$roleRow['id'];
-        $roleObj->namespaceId = (int)$roleRow['namespace'];    // Namespace ID from data we've just loaded
-        $roleObj->namespace = $resourceArray['namespace'];  // Namespace NAME from splitting the resource name
+        $roleObj->namespaceId = (int)$roleRow['namespace'];                     // Namespace ID from data we've just loaded
+        $roleObj->namespace = $namespace;                                       // Namespace NAME from splitting the resource name
         $roleObj->role = $roleRow['role'];
 
         $roleObj->loadRuleSet($roleRow['rule_set']);

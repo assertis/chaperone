@@ -33,6 +33,11 @@ class ChaperoneRuleSet {
     
     /*
      * Loads a given Rule Set from the database.  Returns a RuleSet object
+     * 
+     * @param   int                         $ruleSetId
+     * @returns ChaperoneRuleSet
+     * @throws  ChaperoneException          Rule Set Not Found
+     * @throws  ChaperoneException          Multiple instances of Rule Set found
      */
     public static function loadById($ruleSetId) {
         
@@ -61,10 +66,14 @@ class ChaperoneRuleSet {
 
         // Ensure there is exactly one item
         $rowCount = $stmt->rowCount();
-        if ($rowCount === 0)
-            throw new Exception('Rule Set "'.$ruleSetId.'" not found');
-        if ($rowCount > 1)
-            throw new Exception('Multiple instances of Rule Set "'.$ruleSetId.'" found');    // Should never happen!
+        if ($rowCount === 0) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Rule Set "'.$ruleSetId.'" not found');
+        }
+        if ($rowCount > 1) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Multiple instances of Rule Set "'.$ruleSetId.'" found');    // Should never happen!
+        }
 
         // Get data
         $ruleSetRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -98,17 +107,25 @@ class ChaperoneRuleSet {
 
     /*
      * Method for adding a rule to the Rule Array.  Private for now, since there is no save() mechanism
+     * 
+     * @param   string                      $contextItem
+     * @param   boolean                     $wildcard
+     * @throws  ChaperoneException          Rule item already defined
      */
-    private function addRule($context_item, $wildcard) {
-        if (array_key_exists($context_item, $this->ruleArray)) {
-            throw new Exception('Rule item "'.$context_item.'" already defined');
+    private function addRule($contextItem, $wildcard) {
+        if (array_key_exists($contextItem, $this->ruleArray)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Rule item "'.$contextItem.'" already defined');
         }
-        $this->ruleArray[$context_item] = $wildcard;
+        $this->ruleArray[$contextItem] = $wildcard;
     }
 
 
     /*
      * Helper method.  Returns Boolean indicating whether a wildcard Rule exists for the given Context Item
+     * 
+     * @param   string                      $contextItem
+     * @returns boolean
      */
     public function isWildcardRuleFor($contextItem) {
         return (array_key_exists($contextItem, $this->ruleArray) AND $this->ruleArray[$contextItem]);
@@ -117,21 +134,31 @@ class ChaperoneRuleSet {
     
     /*
      * Helper method for getting rules based on their wildcard flag
+     * 
+     * @param   boolean                     $matchWildcard
+     * @returns array
      */
     private function getMatchingRules($matchWildcard) {
         $ruleArray = array();
-        foreach ($this->ruleArray AS $context_item=>$wildcard) {
-            if ($wildcard === $matchWildcard) $ruleArray[] = $context_item;
+        foreach ($this->ruleArray AS $contextItem=>$wildcard) {
+            if ($wildcard === $matchWildcard) $ruleArray[] = $contextItem;
         }
         return $ruleArray;
     }
     
-    // These two methods use the helper above
+    /*
+     * These two methods use the helper above
+     * 
+     * @returns array
+     */
     public function getWildcardRules() { return $this->getMatchingRules(TRUE); }
     public function getContextRules() { return $this->getMatchingRules(FALSE); }
-    
+
+
     /*
      * This method returns the rules in a human-readable form
+     * 
+     * @returns string
      */
     public function getReadableRules() {
         $ruleArray = array();
@@ -145,6 +172,9 @@ class ChaperoneRuleSet {
     /*
      * Returns a Context RuleSet for a given context, using this object's Rules
      * If any required context items are missing, an exception is thrown
+     * 
+     * @param   array                       $contextArray (optional)
+     * @returns ChaperoneContextRuleSet
      */
     public function getContextRuleSet($contextArray=array()) {
         return $this->getContextRuleSetExceptFor(NULL, $contextArray);
@@ -157,6 +187,11 @@ class ChaperoneRuleSet {
      * specifically excluding a single rule
      * If any required context items are missing, an exception is thrown
      * This method is called by getContextRuleSet(), with $except set to NULL
+     * 
+     * @param   string/null                 $exclude
+     * @param   array                       $contextArray (optional)
+     * @returns ChaperoneContextRuleSet
+     * @throws  ChaperoneException          Missing context item(s)
      */
     public function getContextRuleSetExceptFor($exclude, $contextArray=array()) {
         
@@ -177,9 +212,12 @@ class ChaperoneRuleSet {
 
         // If any items are missing, throw an exception
         if (count($missingArray) > 0) {
+            require_once('ChaperoneException.php');
             unset($ccrsObj);
+            if (count($missingArray) === 1)
+                throw new ChaperoneException('Missing context item: "'.$missingArray[0].'"');
             $missing = implode('", "', $missingArray);
-            throw new Exception('Missing context items: "'.$missing.'"');
+            throw new ChaperoneException('Missing context items: "'.$missing.'"');
         }
 
         // If we made it through to here, add any Wildcard Rules (unless excluded)

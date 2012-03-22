@@ -3,31 +3,18 @@
  * This code tests whether a particular role is able to perform a particular action in a particular context
  */
 require_once('classes/Chaperone.php');
-require_once('classes/ChaperoneSession.php');
-/*
-define('U_DATABASE_HOST', 'localhost');
-define('U_DATABASE_USERNAME', 'chaptest');
-define('U_DATABASE_PASSWORD', 'chaptest');
 
-try {
-    $pdo = new PDO('mysql:host='.U_DATABASE_HOST, U_DATABASE_USERNAME, U_DATABASE_PASSWORD);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    Chaperone::setPDO($pdo);
-} catch (Exception $e) {
-    die($e);
-}
+// Test whether the user is logged in
+if (!Chaperone::isLoggedIn()) die('Not logged in');
 
-// Get session and attach a couple of roles
-*/
-$session = ChaperoneSession::getSession();
-/*
-$session->attachRole('tmcadmin', array('tmc'=>'abc'));
-$session->attachRole('tmcadmin', array('tmc'=>'xyz'));
-*/
+// Who am I?
+echo '<b>User: </b>'.Chaperone::getEmailAddress().'<br />';
+
 // Action and context to be tested
-$action = 'b2b.order_resend';
-$contextArray = array('tmc'=>'xyz', 'business'=>123, 'email'=>'fred');
+$action = 'biz_view';
+$contextArray = array('tmc'=>'abc', 'business'=>123);
 
 // Test it
-echo ($session->actionCheck($action, $contextArray)) ? 'Allowed' : 'Denied';
+Chaperone::setNamespace('b2b');
+echo (Chaperone::isActionAllowed($action, $contextArray)) ? 'Allowed' : 'Denied';
 ?>

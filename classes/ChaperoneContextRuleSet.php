@@ -20,12 +20,18 @@ class ChaperoneContextRuleSet {
      * This method adds a Context Rule.  This consists of a context item and a value for it
      */
     public function addContextRule($contextItem, $contextValue) {
-        if (!is_scalar($contextItem))
-            throw new Exception('Context item "'.$contextItem.'" has an invalid name');
-        if (array_key_exists($contextItem, $this->ruleArray))
-            throw new Exception('Context item "'.$contextItem.'" already exists in rule');
-        if (!is_scalar($contextValue))
-            throw new Exception('Context item "'.$contextItem.'" has an invalid value');
+        if (!is_scalar($contextItem)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid name');
+        }
+        if (array_key_exists($contextItem, $this->ruleArray)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Context item "'.$contextItem.'" already exists in rule');
+        }
+        if (!is_scalar($contextValue)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid value');
+        }
         $this->ruleArray[$contextItem] = $contextValue;
     }
 
@@ -34,10 +40,14 @@ class ChaperoneContextRuleSet {
      * This method adds a Wildcard Rule.  This only consists of a context item, as all values are valid for it
      */
     public function addWildcardRule($contextItem) {
-        if (!is_scalar($contextItem))
-            throw new Exception('Context item "'.$contextItem.'" has an invalid name');
-        if (array_key_exists($contextItem, $this->ruleArray))
-            throw new Exception('Context item "'.$contextItem.'" already exists in rule');
+        if (!is_scalar($contextItem)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid name');
+        }
+        if (array_key_exists($contextItem, $this->ruleArray)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Context item "'.$contextItem.'" already exists in rule');
+        }
         $this->ruleArray[$contextItem] = NULL;
     }
 
