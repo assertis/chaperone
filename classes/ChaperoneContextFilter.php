@@ -24,6 +24,12 @@ class ChaperoneContextFilter {
     
     public function addItem($value) {
         
+        // Disallow invalid values
+        if (!is_string($value) AND !is_integer($value)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Filter item "'.$value.'" is invalid');
+        }
+        
         // If the list is wildcard, we don't need to add items
         if ($this->contextFilterList === NULL) return;
 
