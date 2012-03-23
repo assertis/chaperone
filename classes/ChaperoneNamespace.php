@@ -26,6 +26,14 @@ class ChaperoneNamespace {
      * @param   string                      $namespace
      */
     public function setNamespace($namespace) {
+        if (!is_scalar($namespace)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Namespace "'.$namespace.'" is invalid');
+        }
+        if (strpos($namespace, '.') !== FALSE) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Namespace "'.$contextItem.'" contains a dot');
+        }
         self::$namespace = $namespace;
     }
 
@@ -53,7 +61,7 @@ class ChaperoneNamespace {
         
         // Look up the ID in the database
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT  name
                 FROM    '.$schema.'.chaperone_namespace
                 WHERE   id = :id';
@@ -90,7 +98,7 @@ class ChaperoneNamespace {
         
         // Look up the name in the database
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT  id
                 FROM    '.$schema.'.chaperone_namespace
                 WHERE   name = :name';
@@ -148,5 +156,17 @@ class ChaperoneNamespace {
             throw new ChaperoneException('Invalid Resource name "'.$resourceName.'"');
         }
     }
+
+    /*
+     * This helper method takes a resource name which may or may not contain a namespace
+     * If no namespace is present, it attempts to prepend the default one
+     * @param   string                      $resourceName
+     * @returns string
+     */
+    public static function getFullName($resourceName) {
+        $resourceArray = self::splitResourceName($resourceName);
+        return $resourceArray['namespace'].'.'.$resourceArray['resourceName'];
+    }
+    
 }
 ?>
