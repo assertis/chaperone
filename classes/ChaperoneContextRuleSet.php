@@ -6,7 +6,7 @@
  * either Wildcard rules (all values for that context item are allowed) or
  * Context Rules (a specific value is defined for that context item)
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneContextRuleSet {
     private $ruleArray;
@@ -17,18 +17,32 @@ class ChaperoneContextRuleSet {
 
 
     /*
-     * This method adds a Context Rule.  This consists of a context item and a value for it
+     * This helper method validates that the passed Context Item is a string that is not duplicated
      */
-    public function addContextRule($contextItem, $contextValue) {
-        if (!is_scalar($contextItem)) {
+    private function validateContextItemValue($contextItem) {
+        if (!is_string($contextItem)) {
             require_once('ChaperoneException.php');
             throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid name');
         }
+    }
+
+    
+    private function validateContextItemNotDuplicate($contextItem) {
         if (array_key_exists($contextItem, $this->ruleArray)) {
             require_once('ChaperoneException.php');
             throw new ChaperoneException('Context item "'.$contextItem.'" already exists in rule');
         }
-        if (!is_scalar($contextValue)) {
+    }
+    
+    
+    /*
+     * This method adds a Context Rule.  This consists of a context item and a value for it
+     */
+    public function addContextRule($contextItem, $contextValue) {
+
+        $this->validateContextItemValue($contextItem);
+        $this->validateContextItemNotDuplicate($contextItem);
+        if (!is_string($contextValue) AND !is_integer($contextValue)) {
             require_once('ChaperoneException.php');
             throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid value');
         }
@@ -40,14 +54,8 @@ class ChaperoneContextRuleSet {
      * This method adds a Wildcard Rule.  This only consists of a context item, as all values are valid for it
      */
     public function addWildcardRule($contextItem) {
-        if (!is_scalar($contextItem)) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('Context item "'.$contextItem.'" has an invalid name');
-        }
-        if (array_key_exists($contextItem, $this->ruleArray)) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('Context item "'.$contextItem.'" already exists in rule');
-        }
+        $this->validateContextItemValue($contextItem);
+        $this->validateContextItemNotDuplicate($contextItem);
         $this->ruleArray[$contextItem] = NULL;
     }
 
@@ -56,6 +64,7 @@ class ChaperoneContextRuleSet {
      * Returns a Boolean indicating whether a rule (either context or wildcard) exists for the given Context Item
      */
     public function isRuleFor($contextItem) {
+        $this->validateContextItemValue($contextItem);
         return (array_key_exists($contextItem, $this->ruleArray));        
     }
 
@@ -64,6 +73,7 @@ class ChaperoneContextRuleSet {
      * Returns a Boolean indicating whether a wildcard rule exists for the given Context Item
      */
     public function isWildcardRuleFor($contextItem) {
+        $this->validateContextItemValue($contextItem);
         return ($this->isRuleFor($contextItem) AND ($this->ruleArray[$contextItem] === NULL));
     }
 
@@ -73,6 +83,7 @@ class ChaperoneContextRuleSet {
      * If it doesn't exist, it returns NULL
      */
     public function getContextRuleValue($contextItem) {
+        $this->validateContextItemValue($contextItem);
         return ($this->isRuleFor($contextItem)) ? $this->ruleArray[$contextItem] : NULL;
     }
 
