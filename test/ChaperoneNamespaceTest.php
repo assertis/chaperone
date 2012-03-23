@@ -14,6 +14,14 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
                 WHERE   name = :name';
 
     /*
+     * Reset static object before running unit tests (in case other tests left it in an odd state)
+     */
+    public static function setUpBeforeClass() {
+        ChaperoneNamespace::reset();
+    }
+
+    
+    /*
      * This helper method builds a mock PDO Statement, binds the parameters, sets up the return data and overrun tests
      * @param   array                       $bindArray      Array of items to bind in the SQL
      * @param   array                       $resultArray    Array of rows of data to simulate returning
@@ -526,6 +534,14 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
         }
 
         // Reset static class's attributes
+        ChaperoneNamespace::reset();
+    }
+    
+    
+    /*
+     * Reset static object before going on to next unit test
+     */
+    public static function tearDownAfterClass() {
         ChaperoneNamespace::reset();
     }
 }
