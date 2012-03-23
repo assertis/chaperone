@@ -53,6 +53,81 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     }
 
     /*
+     * Tests that a Null item is rejected
+     */
+    function testNullItem() {
+        
+        $cltObj = new ChaperoneContextFilter();
+        try {
+            $cltObj->addItem(NULL);
+            $this->fail('addItem() failed to generate an exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Filter item "" is invalid');
+        }
+    }
+
+    
+    /*
+     * Tests that an array item is rejected
+     */
+    function testArrayItem() {
+        
+        $cltObj = new ChaperoneContextFilter();
+        try {
+            $cltObj->addItem(array(1, 2, 3));
+            $this->fail('addItem() failed to generate an exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Filter item "Array" is invalid');
+        }
+    }
+
+    
+    /*
+     * Tests that a non-interger item is rejected
+     */
+    function testNonIntegerItem() {
+        
+        $cltObj = new ChaperoneContextFilter();
+        try {
+            $cltObj->addItem(1.23);
+            $this->fail('addItem() failed to generate an exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Filter item "1.23" is invalid');
+        }
+    }
+
+    
+    /*
+     * Tests that an item with the value of TRUE is rejected
+     */
+    function testTrueItem() {
+        
+        $cltObj = new ChaperoneContextFilter();
+        try {
+            $cltObj->addItem(TRUE);
+            $this->fail('addItem() failed to generate an exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Filter item "1" is invalid');
+        }
+    }
+
+    
+    /*
+     * Tests that an item with the value of FALSE is rejected
+     */
+    function testFalseItem() {
+        
+        $cltObj = new ChaperoneContextFilter();
+        try {
+            $cltObj->addItem(FALSE);
+            $this->fail('addItem() failed to generate an exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Filter item "" is invalid');
+        }
+    }
+
+    
+    /*
      * Tests that a wildcard can be added
      */
     function testWildcard() {
