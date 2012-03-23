@@ -3,7 +3,7 @@
 /**
  * Description of ChaperoneException
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneException extends Exception {
 }
