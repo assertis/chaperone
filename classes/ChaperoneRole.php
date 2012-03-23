@@ -41,7 +41,7 @@ class ChaperoneRole {
 
         // Look up the Role in the database
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT  id, namespace, role, rule_set
                 FROM    '.$schema.'.chaperone_role
                 WHERE   namespace = :namespace
@@ -98,7 +98,7 @@ class ChaperoneRole {
         require_once('ChaperoneAction.php');
         
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT      ca.id
                 FROM        '.$schema.'.chaperone_role_action AS cra
                 JOIN        '.$schema.'.chaperone_action AS ca ON ca.id = cra.action
