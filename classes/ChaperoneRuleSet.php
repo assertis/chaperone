@@ -56,7 +56,7 @@ class ChaperoneRuleSet {
         // Look up namespace ID on ruleset.  This is used to ensure roles and
         // actions are attached to rulesets in the same namespace
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT  namespace
                 FROM    '.$schema.'.chaperone_rule_set
                 WHERE   id = :rule_set';
@@ -85,7 +85,7 @@ class ChaperoneRuleSet {
 
         // Get rules
         $sql = 'SELECT      context_item, wildcard
-                FROM        '.Chaperone::getSchema().'.chaperone_rule
+                FROM        '.$schema.'.chaperone_rule
                 WHERE       rule_set = :rule_set
                 ORDER BY    context_item';
         $stmt = $pdo->prepare($sql);
