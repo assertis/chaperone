@@ -17,11 +17,10 @@ try {
 
 Chaperone::setNamespace('b2b');
 Chaperone::setPDO($pdo);
-Chaperone::clearSession();
-Chaperone::setEmailAddress('fred');
+Chaperone::newSession('fred');
 Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>123));
 Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>456));
 Chaperone::attachRole('tmcadmin', array('tmc'=>'xyz'));
 
-echo 'Attached';
+echo 'Attached as '.Chaperone::getEmailAddress();
 ?>
