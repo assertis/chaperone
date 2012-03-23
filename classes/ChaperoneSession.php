@@ -4,75 +4,38 @@ require_once('ChaperoneContextRuleSet.php');
 require_once('ChaperoneRole.php');
 require_once('ChaperoneRuleSet.php');
 /**
- * This class defines a session within Chaperone.  The class creates a singleton
- * object when needed.  This is create either from $_SESSION (if it exists), or
- * a brand new instance.
+ * This class handles the logic for a session.  An email address must be specified
+ * when starting a session.  Roles can then be attached to the session and permissions
+ * can then be tested.
  * 
- * The object is serialized and written to $_SESSION['CHAPERONE'] (configurable)
- * when save() is called.  This is why a singleton is used rather than a static
- * class (since you need to serialize an object).  Serialization handles multiple
- * references to the same object (which will happen with the same role being
- * defined for multiple actions).
+ * This class does NOT handle the session within $_SESSION.  That is done by
+ * ChaperoneCurrentSession.  The roles are deliberately split so that you can create
+ * session objects separately to the currently logged-in user if you need to test
+ * permissions independantly (eg. testing whether a user with a particular role
+ * can access something)
  *
  * @author steve
  */
 class ChaperoneSession {
-    const identifier='CHAPERONE';                                               // Key in $_SESSION
-
-    private static $instance = NULL;                                            // Static, so won't be serialized
 
     private $email = NULL;                                                      // Email address (userid, essentially) of user
     
-    // Chaperone Action Array is a multi dimensional array.
+    // Chaperone Action Context RuleSet Array is a multi dimensional array.
     // First level is the action name
     // Second level is just keyed by number
     // Third level has references to the rcrs (role_context_rule_set) object and action object
     private $actionContextRuleSetArray = array();
 
     /*
-     *  Private constructor prevents external instantiation
+     * Constructor.  For now we don't validate the email address
      */
-    private function __construct() {}
-
-
-    /*
-     * Returns the current session.  If there is already an instance, that is returned
-     * If there is no instance, will attempt to get one from $_SESSION
-     * 
-     * @returns ChaperoneSession
-     */
-    public static function getSession() {
-        
-        // If there is not an instance of the session, create one
-        if (self::$instance === NULL) {
-            if (!headers_sent()) session_start();
-            $sessionObj = NULL;
-            
-            // If it looks as though there's a ChaperoneSession in $_SESSION, attempt to use it
-            if (array_key_exists(self::identifier, $_SESSION)) {
-
-                // Unserialize may fail if corrupt.  Wrong object may be in the session
-                try {
-                    $sessionObj = unserialize($_SESSION[self::identifier]);
-                    if (!($sessionObj instanceof ChaperoneSession)) $sessionObj = NULL;
-                } catch (Exception $e) {
-                    $sessionObj = NULL;
-                }
-            }
-            
-            // Either use the object we unserialized or create a new session.
-            // We don't save because we've either just loaded it, or it's empty
-            self::$instance = ($sessionObj === NULL) ? new self() : $sessionObj;
-            unset($sessionObj);
-        }
-
-        // Return instance of session
-        return self::$instance;
+    public function __construct($email) {
+        $this->email = $email;
     }
-
+    
     
     /*
-     * Clears the current Chaperone Session
+     * Clears the Chaperone Session.  Used to invalidate objects that may still be referenced but overridden
      */
     public function clear() {
 
@@ -81,41 +44,8 @@ class ChaperoneSession {
 
         // Clear our Action Context RuleSet array
         $this->actionContextRuleSetArray = array();
-
-        // If the PHP session currently has a ChaperoneSession, unset it
-        if (array_key_exists(self::identifier, $_SESSION))
-            unset($_SESSION[self::identifier]);
     }
 
-    
-    /*
-     * Checks whether the user is logged in.  Does this by simply checking whether the email address is set
-     * 
-     * @returns boolean
-     */
-    public function isLoggedIn() {
-        return ($this->email !== NULL);
-    }
-
-    
-    /*
-     * Sets the email address - essentially a userid
-     * Once set, it cannot be changed.  If you need to reset, you must clear() and set it again
-     * 
-     * @param   string                      $email
-     * @throws  ChaperoneException          Cannot set email address twice
-     */
-    public function setEmailAddress($email) {
-        
-        // Prevent email address being set twice.  We'll be a bit forgiving and ignore you trying to set it to the existing value
-        if (($this->email !== NULL) AND ($this->email != $email)) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('Cannot set email address twice');
-        }
-
-        $this->email = $email;
-    }
-    
     
     /*
      * Gets the user's email address - essentially a userid
@@ -132,17 +62,10 @@ class ChaperoneSession {
      * 
      * @param   string                      $role
      * @param   array (optional)            $contextArray
-     * @throws  ChaperoneException          User must be logged in before attaching roles
      * @throws  ChaperoneException          
      */
     public function attachRole($role, $contextArray=array()) {
 
-        // Email address must be set before attaching roles (log in before attaching)
-        if (!$this->isLoggedIn()) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('User must be logged in before attaching roles');
-        }
-        
         try {
             // Get role
             $roleObj = ChaperoneRole::loadByName($role);
@@ -166,32 +89,9 @@ class ChaperoneSession {
             }
             $this->actionContextRuleSetArray[$actionName][] = array('rcrs'=>$rcrsObj, 'action'=>$actionObj);
         }
-
-        // Save to session
-        $this->save();
-    }
-
-    /*
-     * Saves the current session to $_SESSION
-     */
-    private function save() {
-        // Serialize self and put into session
-        $_SESSION[self::identifier] = serialize($this);
     }
 
 
-    /*
-     * Helper function.  Gets the full name of a given resource
-     * 
-     * @param   string                      $resource
-     * @returns string
-     */
-    private function getFullName($resource) {
-        require_once('ChaperoneNamespace.php');
-        $resourceArray = ChaperoneNamespace::splitResourceName($resource);
-        return $resourceArray['namespace'].'.'.$resourceArray['resourceName'];
-
-    }
     /*
      * Determines whether the current session has permission to perform the specified action in the specified context
      * 
@@ -201,7 +101,9 @@ class ChaperoneSession {
      */
     public function isActionAllowed($action, $contextArray=array()) {
         
-        $actionFullName = $this->getFullName($action);
+        // $action may or may not contain a namespace.  Get the full resource name
+        require_once('ChaperoneNamespace.php');
+        $actionFullName = ChaperoneNamespace::getFullName($action);
 
         // If we have no entries for the action, permission is denied
         if (!array_key_exists($actionFullName, $this->actionContextRuleSetArray)) return FALSE;
@@ -226,8 +128,8 @@ class ChaperoneSession {
         // No RuleSets were satisfied.  Permission denied
         return FALSE;
     }
-    
-    
+
+
     /*
      * For a given action and context item (and optional context), returns a list
      * of which items (if any) the user can access.  This saves having to cycle
@@ -236,10 +138,10 @@ class ChaperoneSession {
      * @param   string                      $action
      * @param   string                      $contextItem
      * @param   array (optional)            $contextArray
-     * @returns array/null
+     * @returns ChaperoneContextValueList
      * @throws  ChaperoneException          Context item exists in the context array
      */
-    public function getContextValueList($action, $contextItem, $contextArray=array()) {
+    public function getAllowedContextValues($action, $contextItem, $contextArray=array()) {
 
         // Sanity check that the requested context item is not in the context array
         if (array_key_exists($contextItem, $contextArray)) {
@@ -251,10 +153,11 @@ class ChaperoneSession {
         require_once('ChaperoneContextValueList.php');
         $contextValueListObj = new ChaperoneContextValueList();
 
-        // Deal with namespace if it is not specified in the action name
-        $actionFullName = $this->getFullName($action);
+        // $action may or may not contain a namespace.  Get the full resource name
+        require_once('ChaperoneNamespace.php');
+        $actionFullName = ChaperoneNamespace::getFullName($action);
 
-        // If we have no entries for the action, we have permission to nothing
+        // If we have no entries for the action, we don't have permission to anything
         if (!array_key_exists($actionFullName, $this->actionContextRuleSetArray)) return $contextValueListObj;
 
         // Get a reference to the array entry for the specified action
@@ -274,7 +177,7 @@ class ChaperoneSession {
             $actionObj =& $crsAction['action'];
 
             // Get context list for the action
-            $returnedContextValueListObj = $actionObj->getContextValueList($contextItem, $rcrsObj, $contextArray);
+            $returnedContextValueListObj = $actionObj->getAllowedContextValues($contextItem, $rcrsObj, $contextArray);
 
             // If a wildcard context list is returned, make our context list a wildcard and return it.  No need to look any further
             if ($returnedContextValueListObj->isWildcard()) {
