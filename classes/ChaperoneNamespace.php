@@ -5,7 +5,7 @@ require_once('Chaperone.php');
  * 
  * Since we are likely to be looking up the same item a lot, this class employs a cache
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneNamespace {
     
@@ -15,9 +15,12 @@ class ChaperoneNamespace {
 
 
     /*
-     * Private constructor prevents instantiation
+     * Constructor to prevent instantiation.  Private constructor can't be unit tested
      */
-    private function __constr() {}
+    public function __construct() {
+        require_once('ChaperoneException.php');
+        throw new ChaperoneException('ChaperoneNameSpace is static and cannot be instantiated');
+    }
 
 
     /*
@@ -25,14 +28,14 @@ class ChaperoneNamespace {
      * 
      * @param   string                      $namespace
      */
-    public function setNamespace($namespace) {
-        if (!is_scalar($namespace)) {
+    public static function setNamespace($namespace) {
+        if (!is_string($namespace)) {
             require_once('ChaperoneException.php');
             throw new ChaperoneException('Namespace "'.$namespace.'" is invalid');
         }
         if (strpos($namespace, '.') !== FALSE) {
             require_once('ChaperoneException.php');
-            throw new ChaperoneException('Namespace "'.$contextItem.'" contains a dot');
+            throw new ChaperoneException('Namespace "'.$namespace.'" contains a dot');
         }
         self::$namespace = $namespace;
     }
@@ -43,10 +46,11 @@ class ChaperoneNamespace {
      * 
      * @returns string
      */
-    public function getNamespace() {
+    public static function getNamespace() {
         return self::$namespace;
     }
 
+    
     /*
      * Looks up a given ID and returns the name for the item.  If not found, returns NULL
      * 
@@ -57,7 +61,8 @@ class ChaperoneNamespace {
     public static function getNameForId($namespaceId) {
 
         // If we already have the item in cache, return it
-        if (array_key_exists($namespaceId, self::$cacheIdArray)) return self::$cacheIdArray[$namespaceId];
+        if (array_key_exists($namespaceId, self::$cacheIdArray))
+            return self::$cacheIdArray[$namespaceId];
         
         // Look up the ID in the database
         $pdo = Chaperone::getPDO();
@@ -70,7 +75,8 @@ class ChaperoneNamespace {
         $stmt->execute();
 
         // If not found, cache the fact that we couldn't find it and return NULL
-        if ($stmt->rowCount() === 0) return (self::$cacheIdArray[$namespaceId] = NULL);
+        if ($stmt->rowCount() === 0)
+            return (self::$cacheIdArray[$namespaceId] = NULL);
 
         // Otherwise, get the data, cache it (in both directions) and return it
         $namespaceArray = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -94,7 +100,8 @@ class ChaperoneNamespace {
     public static function getIdForName($namespace) {
 
         // If we already have the item in cache, return it
-        if (array_key_exists($namespace, self::$cacheNameArray)) return self::$cacheNameArray[$namespace];
+        if (array_key_exists($namespace, self::$cacheNameArray))
+            return self::$cacheNameArray[$namespace];
         
         // Look up the name in the database
         $pdo = Chaperone::getPDO();
@@ -108,12 +115,13 @@ class ChaperoneNamespace {
 
         // If not found, cache the fact that we couldn't find it and return NULL
         $rowCount = $stmt->rowCount();
-        if ($rowCount === 0) return (self::$cacheNameArray[$namespace] = NULL);
+        if ($rowCount === 0)
+            return (self::$cacheNameArray[$namespace] = NULL);
         
         // If multiple items were found, there's something wrong with one of the table indexes
         if ($rowCount > 1) {
             require_once('ChaperoneException.php');
-            throw new ChaperoneException('More than one instance of "'.$namespace.'" was found');
+            throw new ChaperoneException('More than one instance of Namespace "'.$namespace.'" was found');
         }
 
         // Otherwise, get the data, cache it (in both directions) and return it
@@ -126,7 +134,7 @@ class ChaperoneNamespace {
         self::$cacheIdArray[$namespaceId] = $namespace;
         return (self::$cacheNameArray[$namespace] = $namespaceId);
     }
-
+    
 
     /*
      * This helper method splits the namespace from the rest of the name
@@ -167,6 +175,15 @@ class ChaperoneNamespace {
         $resourceArray = self::splitResourceName($resourceName);
         return $resourceArray['namespace'].'.'.$resourceArray['resourceName'];
     }
+ 
     
+    /*
+     * This method allows unit tests to reset the state of the class
+     */
+    public static function reset() {
+        self::$cacheNameArray = array();
+        self::$cacheIdArray = array();
+        self::$namespace = NULL;
+    }
 }
 ?>
