@@ -20,10 +20,6 @@ class ChaperoneAction {
 
     public function getFullName() { return $this->namespace.'.'.$this->action; }
 
-    public function getRuleSets() {
-        return $this->ruleSetArray;
-    }
-    
     /*
      * Returns a human-readable string of rules.  Calls getReadableRules() for
      * each RuleSet in the ruleSetArray and puts \n between each line
@@ -42,7 +38,7 @@ class ChaperoneAction {
      */
     public function loadById($id) {
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT      namespace, id, action
                 FROM        '.$schema.'.chaperone_action
                 WHERE       id = :id';
@@ -77,7 +73,7 @@ class ChaperoneAction {
     /*
     public function loadByName($name) {
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
     }
     */
 
@@ -96,7 +92,7 @@ class ChaperoneAction {
         }
    
         $pdo = Chaperone::getPDO();
-        $schema = Chaperone::getSchema();
+        $schema = Chaperone::databaseSchema;
         $sql = 'SELECT      crs.id AS rule_set
                 FROM        '.$schema.'.chaperone_action_rule_set AS cars
                 JOIN        '.$schema.'.chaperone_rule_set AS crs ON crs.id = cars.rule_set
@@ -153,12 +149,12 @@ class ChaperoneAction {
     }
 
     /*
-     * This method is related to isRoleContextRuleSetAllowed(), but instead of asking whether you have
+     * This method is related to isActionAllowed(), but instead of asking whether you have
      * permission to perform the current action for a given Context RuleSet within a given Context,
      * this method allows you to ask for a list of permitted items within a given Context Item.
-     * It is called by ChaperoneSession->getContextList() for each matching Action object.
+     * It is called by ChaperoneSession->getContextValueList() for each matching Action object.
      */
-    public function getContextValueList($contextItem, ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
+    public function getAllowedContextValues($contextItem, ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
 
         require_once('ChaperoneContextValueList.php');
         $contextValueListObj = new ChaperoneContextValueList();
