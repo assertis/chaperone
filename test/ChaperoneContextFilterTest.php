@@ -5,7 +5,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a freshly-instantiated list is empty
      */
-    function testEmpty() {
+    public function testEmpty() {
         
         $cltObj = new ChaperoneContextFilter();
         $this->assertEquals($cltObj->isWildcard(), FALSE);
@@ -16,7 +16,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a single item can be added
      */
-    function testOneItem() {
+    public function testOneItem() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addItem('foo');
@@ -28,7 +28,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that two items can be added
      */
-    function testTwoItems() {
+    public function testTwoItems() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addItem('foo');
@@ -41,7 +41,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that duplicate items are handled gracefully
      */
-    function testDuplicateItems() {
+    public function testDuplicateItems() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addItem('foo');
@@ -55,7 +55,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a Null item is rejected
      */
-    function testNullItem() {
+    public function testNullItem() {
         
         $cltObj = new ChaperoneContextFilter();
         try {
@@ -70,7 +70,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that an array item is rejected
      */
-    function testArrayItem() {
+    public function testArrayItem() {
         
         $cltObj = new ChaperoneContextFilter();
         try {
@@ -85,7 +85,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a non-interger item is rejected
      */
-    function testNonIntegerItem() {
+    public function testNonIntegerItem() {
         
         $cltObj = new ChaperoneContextFilter();
         try {
@@ -100,7 +100,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that an item with the value of TRUE is rejected
      */
-    function testTrueItem() {
+    public function testTrueItem() {
         
         $cltObj = new ChaperoneContextFilter();
         try {
@@ -115,7 +115,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that an item with the value of FALSE is rejected
      */
-    function testFalseItem() {
+    public function testFalseItem() {
         
         $cltObj = new ChaperoneContextFilter();
         try {
@@ -130,7 +130,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a wildcard can be added
      */
-    function testWildcard() {
+    public function testWildcard() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addWildcard();
@@ -142,7 +142,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that a wildcard can be added after an item
      */
-    function testItemThenWildcard() {
+    public function testItemThenWildcard() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addItem('foo');
@@ -156,7 +156,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that an item can be added after a wildcard (although the list will stay as wildcard)
      */
-    function testWildcardThenItem() {
+    public function testWildcardThenItem() {
         
         $cltObj = new ChaperoneContextFilter();
         $cltObj->addWildcard();
@@ -170,7 +170,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that two lists with no overlap can be merged
      */
-    function testMergeNoOverlap() {
+    public function testMergeNoOverlap() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addItem('eenie');
         $cltObj1->addItem('meenie');
@@ -189,7 +189,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests that two lists with overlap can be merged
      */
-    function testMergeWithOverlap() {
+    public function testMergeWithOverlap() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addItem('One');
         $cltObj1->addItem('Two');
@@ -208,7 +208,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging a populated list with an empty list (empty list being merged in)
      */
-    function testMergePopulatedWithEmpty() {
+    public function testMergePopulatedWithEmpty() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addItem('foo');
         $cltObj1->addItem('bar');
@@ -225,7 +225,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging an empty list with a populated list (populated list being merged in)
      */
-    function testMergeEmptyWithPopulated() {
+    public function testMergeEmptyWithPopulated() {
         $cltObj1 = new ChaperoneContextFilter();
 
         $cltObj2 = new ChaperoneContextFilter();
@@ -242,7 +242,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging an empty list with a populated list (populated list being merged in)
      */
-    function testMergeEmptyWithEmpty() {
+    public function testMergeEmptyWithEmpty() {
         $cltObj1 = new ChaperoneContextFilter();
 
         $cltObj2 = new ChaperoneContextFilter();
@@ -257,7 +257,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging a non-wildcard list with a wildcard list (wildcard being merged in)
      */
-    function testMergeNonWildcardWithWildcard() {
+    public function testMergeNonWildcardWithWildcard() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addItem('foo');
         $cltObj1->addItem('bar');
@@ -275,7 +275,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging a wildcard list with a non-wildcard list (non-wildcard being merged in)
      */
-    function testMergeWildcardWithNonWildcard() {
+    public function testMergeWildcardWithNonWildcard() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addWildcard();
 
@@ -293,7 +293,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging two wildcard lists
      */
-    function testMergeWildcardWithWildcard() {
+    public function testMergeWildcardWithWildcard() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addWildcard();
 
@@ -310,7 +310,7 @@ class ChaperoneContextFilterTest extends PHPUnit_Framework_TestCase
     /*
      * Tests merging two lists with numeric keys
      */
-    function testMergeNumeric() {
+    public function testMergeNumeric() {
         $cltObj1 = new ChaperoneContextFilter();
         $cltObj1->addItem(123);
 
