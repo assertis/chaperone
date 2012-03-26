@@ -1,5 +1,6 @@
 <?php
 require_once('../classes/ChaperoneNamespace.php');
+require_once('helperMockPdo.php');
 class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
 {
     // SQL for various lookups.  We define them here because we use them in multiple tests
@@ -20,84 +21,15 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
         ChaperoneNamespace::reset();
     }
 
-    
-    /*
-     * This helper method builds a mock PDO Statement, binds the parameters, sets up the return data and overrun tests
-     * @param   array                       $bindArray      Array of items to bind in the SQL
-     * @param   array                       $resultArray    Array of rows of data to simulate returning
-     * @param   int/null                    $fetchCount     The number of times you expect fetch() to be called
-     */
-    private function getMockPDOStatement($bindArray, $resultArray, $fetchCount=NULL) {
-        
-        /*
-         * Mock PDO Statement
-         */
-        $mockPDOStmt = $this->getMock('MockPDOStatement', array('bindValue', 'execute', 'fetch', 'rowCount'));
-        $i = 0;
-        $rowCount = ($resultArray === NULL) ? 0 : count($resultArray);
-        if ($fetchCount === NULL) $fetchCount = $rowCount;
-        foreach ($bindArray AS $key=>$value) {
-            $mockPDOStmt->expects($this->at($i++))
-                    ->method('bindValue')
-                    ->with($this->equalTo($key),
-                           $this->equalTo($value))
-                    ->will($this->returnValue(TRUE));
-        }
-        
-        $mockPDOStmt->expects($this->at($i++))
-                ->method('execute')
-                ->will($this->returnValue(TRUE));
-
-        $mockPDOStmt->expects($this->at($i++))
-                ->method('rowCount')
-                ->will($this->returnValue($rowCount));
-
-        // @todo: sort out the logic for when $fetchCount > $rowCount
-        if ($fetchCount > 0) {
-            for ($j=0; $j<$fetchCount; $j++) {
-                $mockPDOStmt->expects($this->at($i++))
-                        ->method('fetch')
-                        ->with($this->equalTo(PDO::FETCH_ASSOC))
-                        ->will($this->returnValue($resultArray[$j]));
-            }
-        }
-
-        // Overrun tests
-        $mockPDOStmt->expects($this->exactly(count($bindArray)))->method('bindValue');
-        $mockPDOStmt->expects($this->exactly(1))->method('execute');
-        $mockPDOStmt->expects($this->exactly(1))->method('rowCount');
-        $mockPDOStmt->expects($this->exactly($fetchCount))->method('fetch');
-
-        return $mockPDOStmt;
-    }
-    
-    
-    /*
-     * Mock PDO
-     */
-    private function getMockPDO($sql, $mockPDOStmt) {
-        $mockPDO = $this->getMock('MockPDO', array('prepare'));
-        $mockPDO->expects($this->at(0))
-             ->method('prepare')
-             ->with($this->equalTo($sql))
-             ->will($this->returnValue($mockPDOStmt));
-
-        // Overrun test
-        $mockPDO->expects($this->exactly(1))->method('prepare');
-
-        return $mockPDO;
-    }
-
-    
+   
     /*
      * Tests that we can successfully load the namespace for an ID
      */
     public function testGetNameForId() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':id'=>1), array(array('name'=>'test')));
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetNameForId, $mockPDOStmt);
-
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>1), array(array('name'=>'test')), 1);
+        $mockPDO = $helperMockPdoObj->getPDO();
         /*
          * Unit test
          */
@@ -140,10 +72,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      * Tests that we get back NULL if the ID cannot be found
      */
     public function testGetNameForIdMissing() {
-
-        $mockPDOStmt = $this->getMockPDOStatement(array(':id'=>2), NULL);
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetNameForId, $mockPDOStmt);
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>2), array(), 0);
+        $mockPDO = $helperPdoObj->getPDO();
 
         /*
          * Unit test
@@ -161,7 +92,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      * Tests that caching records failed lookups.  This should not require a database lookup
      * @depends testGetNameForIdMissing
      */
-    public function testIdCacheMissing() {
+    public function testGetIdCacheMissing() {
 
         // Mock object with no methods.  Should not be called because the item is coming from cache
         $mockPDO = $this->getMock('MockPDO');
@@ -175,9 +106,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testGetIdForName() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':name'=>'test2'), array(array('id'=>3)));
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetIdForName, $mockPDOStmt);
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test2'), array(array('id'=>3)), 1);
+        $mockPDO = $helperMockPdoObj->getPDO();
 
         /*
          * Unit test
@@ -222,9 +153,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testGetIdForNameMissing() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':name'=>'missing'), NULL);
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetIdForName, $mockPDOStmt);
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'missing'), array(), 0);
+        $mockPDO = $helperPdoObj->getPDO();
 
 
         /*
@@ -259,9 +190,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testDuplicateNamespaceName() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':id'=>4), array(array('name'=>'test')));
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetNameForId, $mockPDOStmt);
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>4), array(array('name'=>'test')), 1);
+        $mockPDO = $helperPdoObj->getPDO();
 
         /*
          * Unit test
@@ -287,9 +218,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testDuplicateNamespaceId() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':name'=>'test3'), array(array('id'=>1)));
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetIdForName, $mockPDOStmt);
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test3'), array(array('id'=>1)), 1);
+        $mockPDO = $helperPdoObj->getPDO();
 
         /*
          * Unit test
@@ -315,9 +246,9 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testMultipleNamespaceRows() {
 
-        $mockPDOStmt = $this->getMockPDOStatement(array(':name'=>'test4'), array(array('id'=>8), array('id'=>9)), 0);
-        
-        $mockPDO = $this->getMockPDO($this->sqlGetIdForName, $mockPDOStmt);
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test4'), array(array('id'=>8), array('id'=>9)), 0);
+        $mockPDO = $helperPdoObj->getPDO();
 
         /*
          * Unit test
