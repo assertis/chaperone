@@ -10,7 +10,7 @@ require_once('Chaperone.php');
  * reference to the same item if duplicates are requested (rather than creating
  * a new object).
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneRuleSet {
     
@@ -21,7 +21,10 @@ class ChaperoneRuleSet {
     private $namespaceId = NULL;
     private $ruleArray;
     
-    public function __construct() {
+    /*
+     * For now, loadById() factory method should be used
+     */
+    private function __construct() {
         $this->ruleArray = array();
     }
 
@@ -29,10 +32,12 @@ class ChaperoneRuleSet {
         self::$cacheIdArray = array();
     }
 
-    public function getNamespaceId() { return $this->namespaceId; }
+    public function getNamespaceId() {
+        return $this->namespaceId;
+    }
     
     /*
-     * Loads a given Rule Set from the database.  Returns a RuleSet object
+     * Loads a given Rule Set from the database.  Returns a RuleSet object or NULL
      * 
      * @param   int                         $ruleSetId
      * @returns ChaperoneRuleSet
@@ -106,7 +111,7 @@ class ChaperoneRuleSet {
 
 
     /*
-     * Method for adding a rule to the Rule Array.  Private for now, since there is no save() mechanism
+     * Method for adding a rule to the Rule Array.  Private for now, since we probably don't want outsiders tinkering
      * 
      * @param   string                      $contextItem
      * @param   boolean                     $wildcard
