@@ -22,9 +22,9 @@ class helperMockPdo {
      * @params  array                       $resultArray    Array of results (if any) to return
      * @params  int                         $fetchCount     Number of fetches to expect
      */
-    public function addMockPdoStatement($sql, $bindArray = array(), $resultArray = array(), $fetchCount = NULL) {
+    public function addMockPdoFetchStatement($sql, $bindArray = array(), $resultArray = array(), $fetchCount = NULL) {
         
-        $mockPDOStmt = $this->getMockPdoStatement($bindArray, $resultArray, $fetchCount);
+        $mockPDOStmt = $this->getMockPdoFetchStatement($bindArray, $resultArray, $fetchCount);
         
         $this->mockPdoObj->expects($this->testObj->at($this->pdoCounter++))
              ->method('prepare')
@@ -38,7 +38,7 @@ class helperMockPdo {
      * @params  array                       $resultArray    Array of results (if any) to return
      * @params  int                         $fetchCount     Number of fetches to expect
      */
-    public function getMockPdoStatement($bindArray = array(), $resultArray = array(), $fetchCount = NULL) {
+    public function getMockPdoFetchStatement($bindArray = array(), $resultArray = array(), $fetchCount = NULL) {
         /*
          * Mock PDO Statement
          */
