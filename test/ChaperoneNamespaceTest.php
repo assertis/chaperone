@@ -89,16 +89,6 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     }
 
     
-    public function testCannotBeInstantiated() {
-        try {
-            $obj = new ChaperoneNamespace();
-            $this->fail('ChaperoneNamespace class instantiated - should be static');
-        } catch (ChaperoneException $e) {
-            $this->assertEquals($e->getMessage(), 'ChaperoneNameSpace is static and cannot be instantiated');
-        }
-    }
-
-    
     /*
      * Tests that we can successfully load the namespace for an ID
      */
