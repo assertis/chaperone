@@ -3,7 +3,7 @@ require_once('Chaperone.php');
 /**
  * Description of ChaperoneRole
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneRole {
     
@@ -20,7 +20,7 @@ class ChaperoneRole {
      * a database table, use load()
      */
     public function __construct() {
-        $this->ruleset = NULL;
+        $this->rulesetObj = NULL;
     }
     
     public function getFullName() { return $this->namespace.'.'.$this->role; }
@@ -87,7 +87,11 @@ class ChaperoneRole {
         }
         
         require_once('ChaperoneRuleSet.php');
-        $this->ruleSetObj = ChaperoneRuleSet::loadById($ruleSetId);
+        $ruleSetObj = ChaperoneRuleSet::loadById($ruleSetId);
+        
+        // Ensure that the RuleSet is in the same namespace as the role.  If not, we don't use it
+        if ($ruleSetObj->getNamespaceId() === $this->namespaceId)
+            $this->ruleSetObj = $ruleSetObj;
     }
 
 
@@ -120,7 +124,7 @@ class ChaperoneRole {
 
     public function getContextRuleSet($contextArray=array()) {
 
-        require_once('classes/ChaperoneContextRuleSet.php');
+        require_once('ChaperoneContextRuleSet.php');
         
         // If there is no RuleSet for the Role, we still need a ContextRuleSet,
         // but all it will have is a name
