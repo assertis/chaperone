@@ -28,7 +28,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testGetNameForId() {
 
         $helperMockPdoObj = new helperMockPdo($this);
-        $helperMockPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>1), array(array('name'=>'test')), 1);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlGetNameForId, array(':id'=>1), array(array('name'=>'test')), 1);
         $mockPDO = $helperMockPdoObj->getPDO();
         /*
          * Unit test
@@ -73,7 +73,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
      */
     public function testGetNameForIdMissing() {
         $helperPdoObj = new helperMockPdo($this);
-        $helperPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>2), array(), 0);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetNameForId, array(':id'=>2), array(), 0);
         $mockPDO = $helperPdoObj->getPDO();
 
         /*
@@ -107,7 +107,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testGetIdForName() {
 
         $helperMockPdoObj = new helperMockPdo($this);
-        $helperMockPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test2'), array(array('id'=>3)), 1);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlGetIdForName, array(':name'=>'test2'), array(array('id'=>3)), 1);
         $mockPDO = $helperMockPdoObj->getPDO();
 
         /*
@@ -154,7 +154,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testGetIdForNameMissing() {
 
         $helperPdoObj = new helperMockPdo($this);
-        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'missing'), array(), 0);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetIdForName, array(':name'=>'missing'), array(), 0);
         $mockPDO = $helperPdoObj->getPDO();
 
 
@@ -191,7 +191,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testDuplicateNamespaceName() {
 
         $helperPdoObj = new helperMockPdo($this);
-        $helperPdoObj->addMockPdoStatement($this->sqlGetNameForId, array(':id'=>4), array(array('name'=>'test')), 1);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetNameForId, array(':id'=>4), array(array('name'=>'test')), 1);
         $mockPDO = $helperPdoObj->getPDO();
 
         /*
@@ -219,7 +219,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testDuplicateNamespaceId() {
 
         $helperPdoObj = new helperMockPdo($this);
-        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test3'), array(array('id'=>1)), 1);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetIdForName, array(':name'=>'test3'), array(array('id'=>1)), 1);
         $mockPDO = $helperPdoObj->getPDO();
 
         /*
@@ -247,7 +247,7 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
     public function testMultipleNamespaceRows() {
 
         $helperPdoObj = new helperMockPdo($this);
-        $helperPdoObj->addMockPdoStatement($this->sqlGetIdForName, array(':name'=>'test4'), array(array('id'=>8), array('id'=>9)), 0);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetIdForName, array(':name'=>'test4'), array(array('id'=>8), array('id'=>9)), 0);
         $mockPDO = $helperPdoObj->getPDO();
 
         /*
