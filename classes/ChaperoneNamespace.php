@@ -15,15 +15,6 @@ class ChaperoneNamespace {
 
 
     /*
-     * Constructor to prevent instantiation.  Private constructor can't be unit tested
-     */
-    public function __construct() {
-        require_once('ChaperoneException.php');
-        throw new ChaperoneException('ChaperoneNameSpace is static and cannot be instantiated');
-    }
-
-
-    /*
      * Sets the current namespace
      * 
      * @param   string                      $namespace
