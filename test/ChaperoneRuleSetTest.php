@@ -134,7 +134,7 @@ class ChaperoneRuleSetTest extends PHPUnit_Framework_TestCase
 
     
     // This method is called twice - once as a normal load and again after flushing the cache
-    private function loadTest() {
+    public function loadTest() {
 
         // Get mock PDO
         $mockPDO = $this->getMockPDO(1, self::$testRuleSetArray, self::$testRuleArray);
