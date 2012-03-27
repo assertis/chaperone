@@ -5,7 +5,7 @@ require_once('ChaperoneSession.php');
  * getSession() is a factory method that returns a single session object or NULL if there is no session
  * This session is cached, so subsequent calls to getSession() will return the same reference
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneCurrentSession {
 
@@ -131,8 +131,8 @@ class ChaperoneCurrentSession {
         return self::getSessionOrThrowException()->isActionAllowed($action, $contextArray);
     }
 
-    public static function getAllowedContextValues($action, $contextItem, $contextArray=array()) {
-        return self::getSessionOrThrowException()->getAllowedContextValues($action, $contextItem, $contextArray);
+    public static function getContextFilter($action, $contextItem, $contextArray=array()) {
+        return self::getSessionOrThrowException()->getContextFilter($action, $contextItem, $contextArray);
     }
 
     /*
