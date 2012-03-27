@@ -1,93 +1,123 @@
 <?php
 require_once('../classes/ChaperoneRole.php');
+require_once('helperMockPdo.php');
 class ChaperoneRoleTest extends PHPUnit_Framework_TestCase
 {
-    /*
-     * Helper method - returns a mock PDO statement that has bindValue and execute methods populated
-     */
-    function getMockPDOStatement() {
-        $mockPDOStmt = $this->getMock('MockPDOStatement', array('bindValue', 'execute', 'fetch', 'rowCount'));
-
-        $mockPDOStmt->expects($this->at(0))
-                ->method('bindValue')
-                ->with($this->equalTo(':namespace'),
-                       $this->equalTo(1))
-                ->will($this->returnValue(TRUE));
-
-        $mockPDOStmt->expects($this->at(1))
-                ->method('bindValue')
-                ->with($this->equalTo(':role'),
-                       $this->equalTo('test_role'))
-                ->will($this->returnValue(TRUE));
-
-        $mockPDOStmt->expects($this->at(2))
-                ->method('execute')
-                ->will($this->returnValue(TRUE));
-
-        return $mockPDOStmt;
-    }
-    
-    /*
-     * Helper method - returns a mock PDO that with a prepare() call that returns the supplied mock PDO Statement
-     */
-    function getMockPDO($mockPDOStmt) {
-        $mockPDO = $this->getMock('MockPDO', array('prepare'));
-        $sql = 'SELECT  id, namespace, role, rule_set
+    private $sqlLookupRole = 
+               'SELECT  id, namespace, role, rule_set
                 FROM    global.chaperone_role
                 WHERE   namespace = :namespace
                 AND     role = :role';
-        $mockPDO->expects($this->at(0))
-             ->method('prepare')
-             ->with($this->equalTo($sql))
-             ->will($this->returnValue($mockPDOStmt));
-        
-        // Overrun test
-        $mockPDO->expects($this->exactly(1))->method('prepare');
 
-        return $mockPDO;
-    }
     
     /*
-     * Attempts to load an item.  For simplicity, the test Role has no Rule Set
+     * Add a fake entry into Namespace
+     */
+    static function setUpBeforeClass() {
+        ChaperoneNamespace::reset();
+        ChaperoneRuleSet::flushCache();
+        
+        // Pull in the Namespace Test class and use the testGetNameForId() test to load "test" as namespace 1
+        require_once('ChaperoneNamespaceTest.php');
+        $nstObj = new ChaperoneNamespaceTest();
+        $nstObj->testGetNameForId();
+
+        // Pull in the Namespace Test class and use the loadTest() test to load RuleSet #1
+        require_once('ChaperoneRuleSetTest.php');
+        $nstObj = new ChaperoneRuleSetTest();
+        $nstObj->loadTest();
+    }
+    
+
+    /*
+     * Attempts to load an item with a RuleSet
      */
     function testLoadSuccessful() {
-        /*
-         * Mock PDO Statement
-         */
-        $mockPDOStmt1 = $this->getMockPDOStatement();
 
-        $mockPDOStmt1->expects($this->at(3))
-                ->method('rowCount')
-                ->will($this->returnValue(1));
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlLookupRole,
+                                                    array(':namespace'=>1, ':role'=>'test_role'),
+                                                    array(array('id'=>1, 'namespace'=>1, 'role'=>'test_role', 'rule_set'=>1)),
+                                                    1);
+        $mockPDO = $helperMockPdoObj->getPDO();
 
-        $dataArray = array('id'=>1, 'namespace'=>1, 'role'=>'test_role', 'rule_set'=>NULL);
-        $mockPDOStmt1->expects($this->at(4))
-                ->method('fetch')
-                ->with($this->equalTo(PDO::FETCH_ASSOC))
-                ->will($this->returnValue($dataArray));
+        // Set mock PDO
+        Chaperone::setPDO($mockPDO);
 
-        // Overrun tests
-        $mockPDOStmt1->expects($this->exactly(2))->method('bindValue');
-        $mockPDOStmt1->expects($this->exactly(1))->method('execute');
-        $mockPDOStmt1->expects($this->exactly(1))->method('rowCount');
-        $mockPDOStmt1->expects($this->exactly(1))->method('fetch');
+        // Create object using dummy data in mock PDO
+        $roleObj = ChaperoneRole::loadByName('test.test_role');
+        
+        $this->assertEquals($roleObj->getFullName(), 'test.test_role');
 
+        // Ruleset should have been loaded from cache
+        $this->assertEquals($roleObj->getReadableRules(), 'eenie=*, minie=*, meenie=..., mo=...');
 
-        /*
-         * Mock PDO
-         */
-        $mockPDO = $this->getMockPDO($mockPDOStmt1);
+        // Should not be able to get Context RuleSet without any context
+        try {
+            $crsObj = $roleObj->getContextRuleSet();
+            $this->fail('getContextRuleSet() failed to throw expected exception');
+        } catch (ChaperoneException $e) {
+            $this->assertEquals($e->getMessage(), 'Missing context items: "meenie", "mo"');
+        }
 
+        // If we provide the missing context items, we should be able to get the Context RuleSet
+        $crsObj = $roleObj->getContextRuleSet(array('meenie'=>'meenie', 'mo'=>'mo'));
+        
+        // Create a helper for creating a mock PDO
+        $helperMockPdoObj = new helperMockPdo($this);
 
-        /*
-         * Unit test
-         */
+        // Add PDO statement that gets a list of actions for the role
+        $sql = 'SELECT      ca.id
+                FROM        global.chaperone_role_action AS cra
+                JOIN        global.chaperone_action AS ca ON ca.id = cra.action
+                WHERE       cra.role = :role
+                AND         ca.namespace = :namespace';
+
+        $helperMockPdoObj->addMockPdoFetchStatement($sql,
+                                                    array(':namespace'=>1, ':role'=>1),
+                                                    array(array('id'=>1)));
+
+        // Add PDO statements that load the action and its ruleset
+        require_once('ChaperoneActionTest.php');
+        $atObj = new ChaperoneActionTest();
+        $atObj->populateMockPdo($this, $helperMockPdoObj);
+
+        // Get the PDO from the helper and set it within Chaperone
+        $mockPDO = $helperMockPdoObj->getPDO();
+        Chaperone::setPDO($mockPDO);
+
+        // We should get back an array containing a single action
+        $actionArray = $roleObj->getActions();
+        $this->assertEquals(count($actionArray), 1);
+    }
+
+    
+    
+    /*
+     * Attempts to load an item with no RuleSet
+     */
+    function testLoadSuccessfulNoRuleset() {
+
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlLookupRole,
+                                                    array(':namespace'=>1, ':role'=>'test_role2'),
+                                                    array(array('id'=>2, 'namespace'=>1, 'role'=>'test_role2', 'rule_set'=>NULL)),
+                                                    1);
+        $mockPDO = $helperMockPdoObj->getPDO();
         
         // Set mock PDO
         Chaperone::setPDO($mockPDO);
 
         // Create object using dummy data in mock PDO
-        $o_cr = ChaperoneRole::loadByName('test_role');
+        $roleObj = ChaperoneRole::loadByName('test.test_role2');
+        
+        $this->assertEquals($roleObj->getFullName(), 'test.test_role2');
+        
+        // Ruleset should be empty
+        $this->assertEquals($roleObj->getReadableRules(), '- None -');
+        
+        // Should be able to get Context RuleSet without any context
+        $crsObj = $roleObj->getContextRuleSet();
     }
 
     
@@ -95,77 +125,57 @@ class ChaperoneRoleTest extends PHPUnit_Framework_TestCase
     /*
      * Failure scenario - Zero rows returned.  Should generate an exception
      */
-    function testLoadZeroRows() {
-        $mockPDOStmt1 = $this->getMockPDOStatement();
+    function testLoadNotFound() {
 
-        $mockPDOStmt1->expects($this->at(3))
-                ->method('rowCount')
-                ->will($this->returnValue(0));
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlLookupRole,
+                                                    array(':namespace'=>1, ':role'=>'test_role'),
+                                                    array(),
+                                                    0);
+        $mockPDO = $helperMockPdoObj->getPDO();
 
-        // Overrun tests
-        $mockPDOStmt1->expects($this->exactly(2))->method('bindValue');
-        $mockPDOStmt1->expects($this->exactly(1))->method('execute');
-        $mockPDOStmt1->expects($this->exactly(1))->method('rowCount');
-        $mockPDOStmt1->expects($this->exactly(0))->method('fetch');
-
-        /*
-         * Mock PDO
-         */
-        $mockPDO = $this->getMockPDO($mockPDOStmt1);
-
-        
-        /*
-         * Unit test
-         */
-        
         // Set mock PDO
         Chaperone::setPDO($mockPDO);
 
         // Create object using dummy data in mock PDO.  We expect an exception because the item is not found
         try {
-            $o_cr = ChaperoneRole::loadByName('test_role');
+            $roleObj = ChaperoneRole::loadByName('test.test_role');
             $this->fail('Exception not generated');
         } catch (Exception $e) {
-            $this->assertEquals($e->getMessage(), 'Role "test_role" not found');
+            $this->assertEquals($e->getMessage(), 'Role "test.test_role" not found');
         }
     }
     
     /*
      * Failure scenario - Multiple rows returned.  Should generate an exception
      */
-    function testLoadMultipleows() {
-        $mockPDOStmt1 = $this->getMockPDOStatement();
+    function testLoadMultipleRows() {
 
-        $mockPDOStmt1->expects($this->at(3))
-                ->method('rowCount')
-                ->will($this->returnValue(2));
-
-        // Overrun tests
-        $mockPDOStmt1->expects($this->exactly(2))->method('bindValue');
-        $mockPDOStmt1->expects($this->exactly(1))->method('execute');
-        $mockPDOStmt1->expects($this->exactly(1))->method('rowCount');
-        $mockPDOStmt1->expects($this->exactly(0))->method('fetch');
-
-        /*
-         * Mock PDO
-         */
-        $mockPDO = $this->getMockPDO($mockPDOStmt1);
-
-        
-        /*
-         * Unit test
-         */
+        $helperMockPdoObj = new helperMockPdo($this);
+        $helperMockPdoObj->addMockPdoFetchStatement($this->sqlLookupRole,
+                                                    array(':namespace'=>1, ':role'=>'test_role'),
+                                                    array(
+                                                        array('id'=>1, 'namespace'=>1, 'role'=>'test_role', 'rule_set'=>NULL),
+                                                        array('id'=>1, 'namespace'=>1, 'role'=>'test_role', 'rule_set'=>NULL)
+                                                    ),
+                                                    0);
+        $mockPDO = $helperMockPdoObj->getPDO();
         
         // Set mock PDO
         Chaperone::setPDO($mockPDO);
 
         // Create object using dummy data in mock PDO.  We expect an exception because the item is not found
         try {
-            $o_cr = ChaperoneRole::loadByName('test_role');
+            $roleObj = ChaperoneRole::loadByName('test.test_role');
             $this->fail('Exception not generated');
         } catch (Exception $e) {
-            $this->assertEquals($e->getMessage(), 'Multiple instances of Role "test_role" found');
+            $this->assertEquals($e->getMessage(), 'Multiple instances of Role "test.test_role" found');
         }
+    }
+
+    public static function tearDownAfterClass() {
+        ChaperoneNamespace::reset();
+        ChaperoneRuleSet::flushCache();
     }
 }
 ?>
