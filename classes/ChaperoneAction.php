@@ -38,6 +38,35 @@ class ChaperoneAction {
 
     
     /*
+     * Get a list of all actions for the given namespace ID
+     * Returns an array of actions
+     */
+    public static function getAllActionsForNamespace($namespaceId) {
+
+        // Look up Roles in the database
+        $pdo = Chaperone::getPDO();
+        $schema = Chaperone::databaseSchema;
+        $sql = 'SELECT      id, action
+                FROM        '.$schema.'.chaperone_action
+                WHERE       namespace = :namespace
+                ORDER BY    action';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':namespace', $namespaceId);
+        $stmt->execute();
+        
+        $actionArray = array();
+        if ($stmt->rowCount() > 0) {
+            while ($actionRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $actionArray[] = $actionRow;
+            }
+        }
+        
+        return $roleArray;
+    }
+    
+    
+    /*
      * Loads an action by unique ID.  No caching
      */
     public function loadById($id) {
