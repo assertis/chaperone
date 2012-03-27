@@ -115,8 +115,10 @@ class ChaperoneRole {
 
         // It's valid (but rather pointless) to have a role with no actions
         $actionArray = array();
-        while ($actionRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $actionArray[] = ChaperoneAction::loadById($actionRow['id']);
+        if ($stmt->rowCount() > 0) {
+            while ($actionRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $actionArray[] = ChaperoneAction::loadById($actionRow['id']);
+            }
         }
 
         return $actionArray;
@@ -136,10 +138,16 @@ class ChaperoneRole {
     }
     
     /*
-     * Accessor to get Rule Set
+     * Get rules in a readable format
      */
-    public function getRuleSet() {
-        return $this->ruleSetObj;
+    public function getReadableRules() {
+
+        // If the Role has no RuleSet, return "- None -"
+        if ($this->ruleSetObj === NULL)
+            return '- None -';
+
+        // Otherwise, ask the RuleSet for its rules in a readable format
+        return $this->ruleSetObj->getReadableRules();
     }
 }
 ?>
