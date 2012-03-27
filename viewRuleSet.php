@@ -19,7 +19,7 @@ try {
     $ruleArray = array();
     foreach($ruleSetObj->getWildcardRules() AS $context_item) $ruleArray[] = htmlspecialchars ($context_item).'=*';
     foreach($ruleSetObj->getContextRules() AS $context_item) $ruleArray[] = htmlspecialchars ($context_item).'=...';
-    $rules = (count($ruleArray) == 0) ? '- None -' : join(', ', $ruleArray);
+    $roleRules = (count($ruleArray) == 0) ? '- None -' : join(', ', $ruleArray);
     
 } catch (Exception $e) {
     die($e);
@@ -28,6 +28,6 @@ try {
     <head><title>Rule Set #<?php echo $_GET['id']; ?></title></head>
     <body>
         <h1>Rule Set #<?php echo $_GET['id']; ?></h1>
-        <?php echo $rules; ?>
+        <?php echo $roleRules; ?>
     </body>
 </html>

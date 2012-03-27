@@ -13,7 +13,7 @@ try {
     Chaperone::setPDO($pdo);
     $actionObj = ChaperoneAction::loadById($_GET['id']);
 
-    $rules = nl2br($actionObj->getReadableRules());
+    $roleRules = nl2br($actionObj->getReadableRules());
     
 } catch (Exception $e) {
     die($e);
@@ -23,7 +23,7 @@ try {
     <body>
         <h1>Action "<?php echo htmlspecialchars($actionObj->getFullName()); ?>"</h1>
         <h3>Rules</h3>
-        <?php echo $rules; ?>
+        <?php echo $roleRules; ?>
         
         <h3>Roles</h3>
     </body>

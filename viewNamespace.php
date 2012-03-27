@@ -1,9 +1,6 @@
 <?php
+require_once('config.php');
 if (!array_key_exists('id', $_GET) AND !array_key_exists('name', $_GET)) die('No ID or name specified');
-
-define('U_DATABASE_HOST', 'localhost');
-define('U_DATABASE_USERNAME', 'chaptest');
-define('U_DATABASE_PASSWORD', 'chaptest');
 
 try {
     $pdo = new PDO('mysql:host='.U_DATABASE_HOST, U_DATABASE_USERNAME, U_DATABASE_PASSWORD);
@@ -22,13 +19,38 @@ try {
         if ($id === NULL) die('Namespace "'.htmlspecialchars($namespace).'" not found');
     }
     
+    require_once('classes/ChaperoneRole.php');
+    $roleArray = ChaperoneRole::getAllRolesForNamespace($id);
+    
 } catch (Exception $e) {
     die($e);
 }
 ?><html>
-    <head><title>Namespace #<?php echo $id; ?></title></head>
+    <link rel="stylesheet" type="text/css" href="chaperone.css" />
+    <head><title>Chaperone Namespace: <?php echo $namespace; ?></title></head>
     <body>
-        <h1>Namespace #<?php echo $id; ?></h1>
-        <?php echo $namespace; ?>
+        <h1>Chaperone Namespace: <?php echo $namespace; ?></h1>
+        <table>
+            <tr><th>Roles</th><th>Rules</th></tr>
+            <?php
+                if (count($roleArray) === 0) { ?>
+            <tr><td>No roles defined</td></tr>   
+            <?php
+                } else {
+                    foreach($roleArray AS $roleRow) {
+                        $fullName = $namespace.'.'.$roleRow['role'];
+            ?>
+            <tr>
+                <td><a href="viewRole.php?name=<?php echo urlencode($fullName); ?>"><?php echo htmlentities($fullName); ?></a></td>
+                <td><?php echo htmlentities($roleRow['rules']); ?></td>
+            </tr>
+            <?php
+                    }
+                } ?>
+        </table>
+        <p />
+        <table>
+            <tr><th>Actions</th><th>Rules</th></tr>
+        </table>
     </body>
 </html>
