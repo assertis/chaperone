@@ -40,7 +40,57 @@ class ChaperoneNamespace {
     public static function getNamespace() {
         return self::$namespace;
     }
+    
+    
+    /*
+     * This method populates cache entries.  Duplicates in either cache will cause an exception
+     */
+    private static function populateCache($namespaceId, $namespace) {
 
+        if (array_key_exists($namespace, self::$cacheNameArray)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Duplicate namespace "'.$namespace.'" found');
+        }
+
+        if (array_key_exists($namespaceId, self::$cacheIdArray)) {
+            require_once('ChaperoneException.php');
+            throw new ChaperoneException('Duplicate namespace ID "'.$namespaceId.'" found');
+        }
+
+        self::$cacheNameArray[$namespace] = $namespaceId;
+        self::$cacheIdArray[$namespaceId] = $namespace;
+    }
+
+    
+    /*
+     * Returns an array of namespaces and their IDs
+     * @param   boolean                     $populateCache      Flag indicating whether to put the values in the cache
+     * @returns array
+     */
+    public static function getAllNamespaces($populateCache=TRUE) {
+
+        $pdo = Chaperone::getPDO();
+        $schema = Chaperone::databaseSchema;
+        $sql = 'SELECT      name AS namespace, id
+                FROM        '.$schema.'.chaperone_namespace
+                ORDER BY    name';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+
+        $namespaceArray = array();
+        if ($stmt->rowCount() > 0) {
+            while ($namespaceRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $namespaceArray[] = $namespaceRow;
+
+                // If the cache is to be populated, do it
+                if ($populateCache) {
+                    self::populateCache($namespaceRow['id'], $namespaceRow['namespace']);
+                }
+            }
+        }
+        return $namespaceArray;
+    }
+    
     
     /*
      * Looks up a given ID and returns the name for the item.  If not found, returns NULL
@@ -72,12 +122,10 @@ class ChaperoneNamespace {
         // Otherwise, get the data, cache it (in both directions) and return it
         $namespaceArray = $stmt->fetch(PDO::FETCH_ASSOC);
         $namespace = $namespaceArray['name'];
-        if (array_key_exists($namespace, self::$cacheNameArray)) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('Duplicate namespace "'.$namespace.'" found');
-        }
-        self::$cacheNameArray[$namespace] = $namespaceId;
-        return (self::$cacheIdArray[$namespaceId] = $namespace);
+
+        self::populateCache($namespaceId, $namespace);
+        return $namespace;
+
     }
 
 
@@ -118,12 +166,9 @@ class ChaperoneNamespace {
         // Otherwise, get the data, cache it (in both directions) and return it
         $namespaceArray = $stmt->fetch(PDO::FETCH_ASSOC);
         $namespaceId = $namespaceArray['id'];
-        if (array_key_exists($namespaceId, self::$cacheIdArray)) {
-            require_once('ChaperoneException.php');
-            throw new ChaperoneException('Duplicate namespace ID "'.$namespaceId.'" found');
-        }
-        self::$cacheIdArray[$namespaceId] = $namespace;
-        return (self::$cacheNameArray[$namespace] = $namespaceId);
+
+        self::populateCache($namespaceId, $namespace);
+        return $namespaceId;
     }
     
 
