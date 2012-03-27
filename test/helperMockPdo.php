@@ -33,7 +33,6 @@ class helperMockPdo {
     }
 
     /*
-     * @params  string                      $sql            SQL for PDO Statement
      * @params  array                       $bindArray      Array of parameters to bind
      * @params  array                       $resultArray    Array of results (if any) to return
      * @params  int                         $fetchCount     Number of fetches to expect
