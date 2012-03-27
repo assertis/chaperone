@@ -4,7 +4,7 @@ require_once('ChaperoneNamespace.php');
 /**
  * Description of ChaperoneAction
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneAction {
     private $id = NULL;
@@ -13,13 +13,16 @@ class ChaperoneAction {
     private $action = NULL;
 
     private $ruleSetArray;
+
     
     public function __construct() {
         $this->ruleSetArray = array();
     }
 
+    
     public function getFullName() { return $this->namespace.'.'.$this->action; }
 
+    
     /*
      * Returns a human-readable string of rules.  Calls getReadableRules() for
      * each RuleSet in the ruleSetArray and puts \n between each line
@@ -33,6 +36,7 @@ class ChaperoneAction {
         return implode("\n", $rulesArray);
     }
 
+    
     /*
      * Loads an action by unique ID.  No caching
      */
@@ -70,6 +74,7 @@ class ChaperoneAction {
         return $actionObj;
     }
 
+    
     /*
     public function loadByName($name) {
         $pdo = Chaperone::getPDO();
@@ -77,6 +82,7 @@ class ChaperoneAction {
     }
     */
 
+    
     /*
      * Loads RuleSets for Action.  Each one may be cached, in which case duplicates
      * will be references to the same RuleSet
@@ -85,12 +91,14 @@ class ChaperoneAction {
 
         require_once('ChaperoneRuleSet.php');
         
+        /*
         // Sanity checking
         if ($this->id === NULL) {
             require_once('ChaperoneException.php');
             throw new ChaperoneException('Cannot load Rule Sets - Action ID is not set');
         }
-   
+        */
+        
         $pdo = Chaperone::getPDO();
         $schema = Chaperone::databaseSchema;
         $sql = 'SELECT      crs.id AS rule_set
@@ -103,9 +111,12 @@ class ChaperoneAction {
         $stmt->bindValue(':id', $this->id);
         $stmt->execute();
 
+        // If there are rules, load them
         $this->ruleSetArray = array();
-        while($ruleRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $this->ruleSetArray[] = ChaperoneRuleSet::loadById($ruleRow['rule_set']);
+        if ($stmt->rowCount() > 0) {
+            while($ruleRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->ruleSetArray[] = ChaperoneRuleSet::loadById($ruleRow['rule_set']);
+            }
         }
     }
 
@@ -119,7 +130,7 @@ class ChaperoneAction {
      * @param   array (optional)            $contextArray
      * @returns boolean
      */
-    public function isRoleContextRuleSetAllowed(ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
+    public function isActionAllowed(ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
 
         // If there are no Action RuleSets, permission is granted
         if (count($this->ruleSetArray) === 0) return TRUE;
@@ -131,13 +142,9 @@ class ChaperoneAction {
 
                 // If the passed Context RuleSet is a subset of the Action Context RuleSet, permission is granted
                 if ($acrsObj->isSubsetOf($rcrsObj)) {
-                    echo '<pre>';
-                    var_dump($actionRuleSetObj->getContextRuleSet($contextArray));
-                    var_dump($rcrsObj);
-                    echo '</pre>';
+                    unset($acrsObj);
                     return TRUE;
                 }
-                unset($acrsObj);
                 
             // Assume that exceptions mean permission is denied for this ruleset (most likely Action RuleSets not having sufficient context)
             } catch(ChaperoneException $e) {
@@ -148,20 +155,21 @@ class ChaperoneAction {
         return FALSE;
     }
 
+    
     /*
      * This method is related to isActionAllowed(), but instead of asking whether you have
      * permission to perform the current action for a given Context RuleSet within a given Context,
      * this method allows you to ask for a list of permitted items within a given Context Item.
-     * It is called by ChaperoneSession->getContextValueList() for each matching Action object.
+     * It is called by ChaperoneSession->getContextFilter() for each matching Action object.
      */
-    public function getAllowedContextValues($contextItem, ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
+    public function getContextFilter($contextItem, ChaperoneContextRuleSet $rcrsObj, $contextArray=array()) {
 
-        require_once('ChaperoneContextValueList.php');
-        $contextValueListObj = new ChaperoneContextValueList();
+        require_once('ChaperoneContextFilter.php');
+        $contextFilterObj = new ChaperoneContextFilter();
 
         // If there are no Action RuleSets, there is nothing to merge
         if (count($this->ruleSetArray) === 0)
-            return $contextValueListObj;
+            return $contextFilterObj;
 
         // Otherwise, iterate through Action RuleSets, testing the passed Role Context RuleSet against each
         foreach ($this->ruleSetArray AS $actionRuleSetObj) {
@@ -184,16 +192,16 @@ class ChaperoneAction {
             
             // If it's a wildcard, we can just return a Context List with a wildcard.  No need to look any further
             if ($contextValue === NULL) {
-                $contextValueListObj->addWildcard();
-                return $contextValueListObj;
+                $contextFilterObj->addWildcard();
+                return $contextFilterObj;
             }
 
             // It's a specific value, so we add it to the Context List and continue
-            $contextValueListObj->addItem($contextValue);
+            $contextFilterObj->addItem($contextValue);
         }
 
         // Return what we've got.  It should always be a list (possibly empty), but never a wildcard
-        return $contextValueListObj;
+        return $contextFilterObj;
     }
 }
 ?>
