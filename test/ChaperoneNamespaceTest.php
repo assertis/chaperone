@@ -14,6 +14,11 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
                 FROM    global.chaperone_namespace
                 WHERE   name = :name';
 
+    private $sqlGetAllNamespaces = 
+               'SELECT      name AS namespace, id
+                FROM        global.chaperone_namespace
+                ORDER BY    name';
+
     /*
      * Reset static object before running unit tests (in case other tests left it in an odd state)
      */
@@ -264,6 +269,80 @@ class ChaperoneNamespaceTest extends PHPUnit_Framework_TestCase
         } catch (ChaperoneException $e) {
             $this->assertEquals($e->getMessage(), 'More than one instance of Namespace "test4" was found');
         }
+    }
+    
+    
+    /*
+     * Tests that getAllNamespaces() works with caching disabled
+     */
+    public function testGetAllNamespacesNoCaching() {
+
+        // Clear namespace cache
+        ChaperoneNamespace::reset();
+
+        $testDataArray = array(array('namespace'=>'foo', 'id'=>123), array('namespace'=>'bar', 'id'=>456));
+        
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetAllNamespaces, array(), $testDataArray);
+        $mockPDO = $helperPdoObj->getPDO();
+        Chaperone::setPDO($mockPDO);
+
+        // Get all namespaces with caching disabled
+        $namespaceArray = ChaperoneNamespace::getAllNamespaces(FALSE);
+        $this->assertEquals($namespaceArray, $testDataArray);
+        
+        // Look up one item in cache by ID  to ensure it is not there.  This should go to the database, so we need to mock that
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetNameForId, array(':id'=>123), array(), 0);
+        $mockPDO = $helperPdoObj->getPDO();
+        Chaperone::setPDO($mockPDO);
+        $this->assertEquals(ChaperoneNamespace::getNameForId(123), NULL);
+
+        // Look up the other item in cache by name to ensure it also isn't there
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetIdForName, array(':name'=>'bar'), array(), 0);
+        $mockPDO = $helperPdoObj->getPDO();
+        Chaperone::setPDO($mockPDO);
+        $this->assertEquals(ChaperoneNamespace::getIdForName('bar'), NULL);
+
+        // We now need to flush the cache because the two lookups will have put entries in the cache
+        ChaperoneNamespace::reset();
+    }
+
+    
+    /*
+     * Tests that getAllNamespaces() works with caching enabled
+     */
+    public function testGetAllNamespacesWithCaching() {
+
+        // Clear namespace cache
+        ChaperoneNamespace::reset();
+
+        $testDataArray = array(array('namespace'=>'foo', 'id'=>123), array('namespace'=>'bar', 'id'=>456));
+        
+        $helperPdoObj = new helperMockPdo($this);
+        $helperPdoObj->addMockPdoFetchStatement($this->sqlGetAllNamespaces, array(), $testDataArray);
+        $mockPDO = $helperPdoObj->getPDO();
+        Chaperone::setPDO($mockPDO);
+
+        // Get all namespaces with caching enabled (the default)
+        $namespaceArray = ChaperoneNamespace::getAllNamespaces();
+        $this->assertEquals($namespaceArray, $testDataArray);
+
+        
+        
+        // Look up first item by ID to ensure it is in the cache
+        $mockPDO = $this->getMock('MockPDO');
+        Chaperone::setPDO($mockPDO);
+        $this->assertEquals(ChaperoneNamespace::getNameForId(123), 'foo');
+
+        // Look up the other item in cache by name to ensure it also isn't there
+        $mockPDO = $this->getMock('MockPDO');
+        Chaperone::setPDO($mockPDO);
+        $this->assertEquals(ChaperoneNamespace::getIdForName('bar'), 456);
+
+        // Flush the namespace cache before proceeding
+        ChaperoneNamespace::reset();
     }
     
     
