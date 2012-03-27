@@ -23,7 +23,7 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
     /*
      * Add a fake entry into Namespace
      */
-    static function setUpBeforeClass() {
+    public static function setUpBeforeClass() {
         ChaperoneNamespace::reset();
         ChaperoneRuleSet::flushCache();
         
@@ -38,13 +38,12 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
         $crstObj->loadTest();
     }
     
-
+    
     /*
-     * Attempts to load an item with a RuleSet
+     * Helper method to get a mock PDO object with statements to load an action with a single ruleset
+     * This is defined public so that it can be called by other tests
      */
-    function testLoadSuccessful() {
-
-        $helperMockPdoObj = new helperMockPdo($this);
+    public function populateMockPdo($testObj, $helperMockPdoObj) {
         $helperMockPdoObj->addMockPdoFetchStatement($this->sqlGetActionById,
                                                     array(':id'=>1),
                                                     array(array('namespace'=>1, 'id'=>1, 'action'=>'test_action')),
@@ -53,6 +52,16 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
         $helperMockPdoObj->addMockPdoFetchStatement($this->sqlLoadRules,
                                                     array(':namespace'=>1, ':id'=>1),
                                                     array(array('rule_set'=>1)));
+    }
+
+    
+    /*
+     * Attempts to load an item with a RuleSet
+     */
+    public function testLoadSuccessful() {
+
+        $helperMockPdoObj = new helperMockPdo($this);
+        $this->populateMockPdo($this, $helperMockPdoObj);
         $mockPDO = $helperMockPdoObj->getPDO();
 
         // Set mock PDO
@@ -69,6 +78,7 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
         // Save object for subsequent tests (saves reloading it)
         self::$loadedActionObj = $actionObj;
     }
+    
     
     /*
      * Test isActionAllowed() with wildcard rules specified throughout
@@ -217,7 +227,7 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
     /*
      * Attempts to load an item that is not found
      */
-    function testLoadMissing() {
+    public function testLoadMissing() {
 
         $helperMockPdoObj = new helperMockPdo($this);
         $helperMockPdoObj->addMockPdoFetchStatement($this->sqlGetActionById,
@@ -241,7 +251,7 @@ class ChaperoneActionTest extends PHPUnit_Framework_TestCase
     /*
      * Attempts to load an item that returns multiple items (should never happen)
      */
-    function testLoadMultiple() {
+    public function testLoadMultiple() {
 
         $helperMockPdoObj = new helperMockPdo($this);
         $helperMockPdoObj->addMockPdoFetchStatement($this->sqlGetActionById,
