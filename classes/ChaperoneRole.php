@@ -6,7 +6,7 @@ require_once('Chaperone.php');
  * @author Steve Criddle
  */
 class ChaperoneRole {
-    
+
     // Attributes
     private $id = NULL;
     private $namespaceId = NULL;
@@ -25,6 +25,40 @@ class ChaperoneRole {
     
     public function getFullName() { return $this->namespace.'.'.$this->role; }
 
+    /*
+     * Get a list of all roles for the given namespace ID
+     * Returns an array of ids, names and rules
+     */
+    public static function getAllRolesForNamespace($namespaceId) {
+
+        // Look up Roles in the database
+        $pdo = Chaperone::getPDO();
+        $schema = Chaperone::databaseSchema;
+        $sql = 'SELECT      id, role, rule_set
+                FROM        '.$schema.'.chaperone_role
+                WHERE       namespace = :namespace
+                ORDER BY    role';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':namespace', $namespaceId);
+        $stmt->execute();
+        
+        $roleArray = array();
+        if ($stmt->rowCount() > 0) {
+            require_once('classes/ChaperoneRuleSet.php');
+            while ($roleRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if ($roleRow['rule_set'] === NULL) {
+                    $rules = '- None -';
+                } else {
+                    $rules = ChaperoneRuleSet::loadById($roleRow['rule_set'])->getReadableRules();
+                }
+                $roleArray[] = array('id'=>$roleRow['id'], 'role'=>$roleRow['role'], 'rules'=>$rules);
+            }
+        }
+
+        return $roleArray;
+    }
+    
     /*
      * 
      */
