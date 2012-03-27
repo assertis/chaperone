@@ -10,11 +10,11 @@ require_once('ChaperoneRuleSet.php');
  * 
  * This class does NOT handle the session within $_SESSION.  That is done by
  * ChaperoneCurrentSession.  The roles are deliberately split so that you can create
- * session objects separately to the currently logged-in user if you need to test
- * permissions independantly (eg. testing whether a user with a particular role
+ * session objects separate from the currently logged-in user if you need to test
+ * permissions independently (eg. testing whether a user with a particular role
  * can access something)
  *
- * @author steve
+ * @author Steve Criddle
  */
 class ChaperoneSession {
 
@@ -72,6 +72,9 @@ class ChaperoneSession {
 
             // Get context ruleset for role using the supplied context
             $rcrsObj = $roleObj->getContextRuleSet($contextArray);
+            
+            // Add email address as a freebie
+            $rcrsObj->addContextRule('email', $this->email);
 
         } catch (ChaperoneException $e) {
             require_once('ChaperoneException.php');
@@ -121,7 +124,7 @@ class ChaperoneSession {
             $rcrsObj =& $rcrsAction['rcrs'];
 
             // If the Role Context RuleSet is allowed to perform the action, permission is granted
-            if ($actionObj->isRoleContextRuleSetAllowed($rcrsObj, $contextArray))
+            if ($actionObj->isActionAllowed($rcrsObj, $contextArray))
                 return TRUE;
         }
 
@@ -138,10 +141,10 @@ class ChaperoneSession {
      * @param   string                      $action
      * @param   string                      $contextItem
      * @param   array (optional)            $contextArray
-     * @returns ChaperoneContextValueList
+     * @returns ChaperoneContextFilter
      * @throws  ChaperoneException          Context item exists in the context array
      */
-    public function getAllowedContextValues($action, $contextItem, $contextArray=array()) {
+    public function getContextFilter($action, $contextItem, $contextArray=array()) {
 
         // Sanity check that the requested context item is not in the context array
         if (array_key_exists($contextItem, $contextArray)) {
@@ -150,15 +153,15 @@ class ChaperoneSession {
         }
 
         // Context list to store results in
-        require_once('ChaperoneContextValueList.php');
-        $contextValueListObj = new ChaperoneContextValueList();
+        require_once('ChaperoneContextFilter.php');
+        $contextFilterObj = new ChaperoneContextFilter();
 
         // $action may or may not contain a namespace.  Get the full resource name
         require_once('ChaperoneNamespace.php');
         $actionFullName = ChaperoneNamespace::getFullName($action);
 
         // If we have no entries for the action, we don't have permission to anything
-        if (!array_key_exists($actionFullName, $this->actionContextRuleSetArray)) return $contextValueListObj;
+        if (!array_key_exists($actionFullName, $this->actionContextRuleSetArray)) return $contextFilterObj;
 
         // Get a reference to the array entry for the specified action
         $crsActionArray =& $this->actionContextRuleSetArray[$actionFullName];
@@ -177,20 +180,20 @@ class ChaperoneSession {
             $actionObj =& $crsAction['action'];
 
             // Get context list for the action
-            $returnedContextValueListObj = $actionObj->getAllowedContextValues($contextItem, $rcrsObj, $contextArray);
+            $returnedContextFilterObj = $actionObj->getContextFilter($contextItem, $rcrsObj, $contextArray);
 
             // If a wildcard context list is returned, make our context list a wildcard and return it.  No need to look any further
-            if ($returnedContextValueListObj->isWildcard()) {
-                $contextValueListObj->addWildcard();
-                return $contextValueListObj;
+            if ($returnedContextFilterObj->isWildcard()) {
+                $contextFilterObj->addWildcard();
+                return $contextFilterObj;
             }
             
             // Otherwise, merge the returned list into the current one
-            $contextValueListObj->merge($returnedContextValueListObj);
+            $contextFilterObj->merge($returnedContextFilterObj);
         }
 
         // Return the Context List.  It should be a list (possibly empty), but not a wildcard
-        return $contextValueListObj;
+        return $contextFilterObj;
     }
 }
 ?>
