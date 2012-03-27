@@ -18,9 +18,17 @@ try {
 Chaperone::setNamespace('b2b');
 Chaperone::setPDO($pdo);
 Chaperone::newSession('fred');
-Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>123));
-Chaperone::attachRole('businessadmin', array('tmc'=>'abc', 'business'=>456));
-Chaperone::attachRole('tmcadmin', array('tmc'=>'xyz'));
+
+//Chaperone::attachRole('sysadmin');
+
+Chaperone::attachRole('tmcadmin', array('tmc'=>'abc'));
+Chaperone::attachRole('tmcadmin', array('tmc'=>'def'));
+
+Chaperone::attachRole('businessadmin', array('tmc'=>'ghi', 'business'=>123));
+Chaperone::attachRole('businessadmin', array('tmc'=>'ghi', 'business'=>456));
+
+Chaperone::attachRole('businessuser', array('tmc'=>'jkl', 'business'=>123));
+Chaperone::attachRole('businessuser', array('tmc'=>'jkl', 'business'=>456));
 
 echo 'Attached as '.Chaperone::getEmailAddress();
 ?>
