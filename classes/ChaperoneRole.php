@@ -45,7 +45,7 @@ class ChaperoneRole {
         
         $roleArray = array();
         if ($stmt->rowCount() > 0) {
-            require_once('classes/ChaperoneRuleSet.php');
+            require_once('ChaperoneRuleSet.php');
             while ($roleRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 if ($roleRow['rule_set'] === NULL) {
                     $rules = '- None -';
