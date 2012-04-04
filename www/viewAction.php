@@ -27,7 +27,7 @@ try {
         <?php
             if (count($ruleArray) === 0) {
         ?>
-            <tr><td>- No Rules</td></tr>
+            <tr><td>- No Rules -</td></tr>
         <?php
             } else {
                 foreach ($ruleArray AS $ruleSet) {
@@ -44,7 +44,7 @@ try {
         <?php
             if (count($roleArray) === 0) {
         ?>
-            <tr><td>- No Roles</td></tr>
+            <tr><td>- No Roles -</td></tr>
         <?php
             } else {
                 foreach ($roleArray AS $roleRow) {
