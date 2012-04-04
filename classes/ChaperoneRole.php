@@ -144,7 +144,7 @@ class ChaperoneRole {
                 JOIN        '.$schema.'.chaperone_action AS ca ON ca.id = cra.action
                 WHERE       cra.role = :role
                 AND         ca.namespace = :namespace
-                ORDER BY    ca.action';
+                ORDER BY    ca.action, ca.id';
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':namespace', $this->namespaceId);
         $stmt->bindValue(':role', $this->id);
