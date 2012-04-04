@@ -65,7 +65,11 @@ try {
                 <tr>
                     <td rowspan="<?php echo max($ruleCount, 1); ?>"><a href="viewAction.php?id=<?php echo $actionRow['id']; ?>"><?php echo htmlentities($fullName); ?></a></td>
                     <td><?php
-                        if ($ruleCount > 0) echo htmlentities($actionRow['rules'][0]);
+                        if ($ruleCount == 0) {
+                            echo '- No Rules -';
+                        } else if ($ruleCount > 0) {
+                            echo htmlentities($actionRow['rules'][0]);
+                        }
                         for ($i=1; $i<$ruleCount; $i++) {
                             ?></td></tr><tr><td><?php
                             echo htmlentities($actionRow['rules'][$i]);
