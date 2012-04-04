@@ -13,10 +13,10 @@ Chaperone::setNamespace('b2b');
 
 echo '<table><tr><th>Action</th><th>Context Item</th><th>Context</th><th>Context Filter</th></tr>';
 actionFilter('tmc_view', 'tmc');                                                // Which TMCs can I view?
-actionFilter('biz_view', 'business', array('tmc'=>'abc'));                      // Which businesses can I view in TMC "abc"
-actionFilter('biz_view', 'business', array('tmc'=>'def'));                      // Which businesses can I view in TMC "def"
-actionFilter('biz_view', 'business', array('tmc'=>'ghi'));                      // Which businesses can I view in TMC "ghi"
-actionFilter('biz_view', 'business', array('tmc'=>'jkl'));                      // Which businesses can I view in TMC "jkl"
+actionFilter('biz_view', 'biz', array('tmc'=>'abc'));                           // Which businesses can I view in TMC "abc"
+actionFilter('biz_view', 'biz', array('tmc'=>'def'));                           // Which businesses can I view in TMC "def"
+actionFilter('biz_view', 'biz', array('tmc'=>'ghi'));                           // Which businesses can I view in TMC "ghi"
+actionFilter('biz_view', 'biz', array('tmc'=>'jkl'));                           // Which businesses can I view in TMC "jkl"
 echo '</table>';
 
 function actionFilter($action, $contextItem, $contextArray=array()) {
