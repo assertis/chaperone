@@ -21,7 +21,9 @@ try {
     
     require_once('../classes/ChaperoneRole.php');
     $roleArray = ChaperoneRole::getAllRolesForNamespace($id);
-    
+
+    require_once('../classes/ChaperoneAction.php');
+    $actionArray = ChaperoneAction::getAllActionsForNamespace($id);
 } catch (Exception $e) {
     die($e);
 }
@@ -51,6 +53,30 @@ try {
         <p />
         <table>
             <tr><th>Actions</th><th>Rules</th></tr>
+            <?php
+                if (count($actionArray) === 0) { ?>
+            <tr><td>No actions defined</td></tr>   
+            <?php
+                } else {
+                    foreach($actionArray AS $actionRow) {
+                        $fullName = $namespace.'.'.$actionRow['action'];
+                        $ruleCount = count($actionRow['rules']);
+            ?>
+                <tr>
+                    <td rowspan="<?php echo max($ruleCount, 1); ?>"><a href="viewAction.php?id=<?php echo $actionRow['id']; ?>"><?php echo htmlentities($fullName); ?></a></td>
+                    <td><?php
+                        if ($ruleCount > 0) echo htmlentities($actionRow['rules'][0]);
+                        for ($i=1; $i<$ruleCount; $i++) {
+                            ?></td></tr><tr><td><?php
+                            echo htmlentities($actionRow['rules'][$i]);
+                        }
+                        ?>
+                    </td>
+                </tr>
+            <?php
+                    }
+                }
+            ?>
         </table>
     </body>
 </html>
