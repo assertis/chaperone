@@ -48,7 +48,7 @@ class ChaperoneAction {
         $schema = Chaperone::databaseSchema;
         $sql = 'SELECT      ca.id, ca.action, cars.rule_set
                 FROM        '.$schema.'.chaperone_action AS ca
-                JOIN        '.$schema.'.chaperone_action_rule_set AS cars ON cars.action = ca.id
+                LEFT JOIN   '.$schema.'.chaperone_action_rule_set AS cars ON cars.action = ca.id
                 WHERE       namespace = 1
                 ORDER BY    ca.action, cars.rule_set';
 
@@ -77,7 +77,9 @@ class ChaperoneAction {
                 }
                 
                 // Get rules for ruleset
-                $assembleArray['rules'][] = ChaperoneRuleSet::loadById($actionRow['rule_set'])->getReadableRules();
+                if ($actionRow['rule_set'] !== NULL) {
+                    $assembleArray['rules'][] = ChaperoneRuleSet::loadById($actionRow['rule_set'])->getReadableRules();
+                }
             }
             
             // Push last item to the array, if there is one
