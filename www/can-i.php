@@ -18,33 +18,41 @@ actionTest('sys_admin_list');       // System administrators only
 echo '</table>';
 
 echo '<p><table><tr><th>Action</th><th>Context</th><th>Allowed?</th></tr>';
+actionTest('tmc_edit', array('tmc'=>'abc'));
+actionTest('tmc_edit', array('tmc'=>'def'));
+actionTest('tmc_edit', array('tmc'=>'ghi'));
+actionTest('tmc_edit', array('tmc'=>'jkl'));
+echo '</table>';
+
+echo '<p><table><tr><th>Action</th><th>Context</th><th>Allowed?</th></tr>';
 actionTest('tmc_view', array('tmc'=>'abc'));
 actionTest('tmc_view', array('tmc'=>'def'));
 actionTest('tmc_view', array('tmc'=>'ghi'));
 actionTest('tmc_view', array('tmc'=>'jkl'));
+actionTest('tmc_view', array('tmc'=>'mno'));
 echo '</table>';
 
 echo '<p><table><tr><th>Action</th><th>Context</th><th>Allowed?</th></tr>';
-actionTest('biz_view', array('tmc'=>'abc', 'business'=>123));
-actionTest('biz_view', array('tmc'=>'def', 'business'=>999));
-actionTest('biz_view', array('tmc'=>'ghi', 'business'=>123));
-actionTest('biz_view', array('tmc'=>'ghi', 'business'=>999));
-actionTest('biz_view', array('tmc'=>'jkl', 'business'=>123));
+actionTest('biz_view', array('tmc'=>'abc', 'biz'=>123));
+actionTest('biz_view', array('tmc'=>'def', 'biz'=>999));
+actionTest('biz_view', array('tmc'=>'ghi', 'biz'=>123));
+actionTest('biz_view', array('tmc'=>'ghi', 'biz'=>999));
+actionTest('biz_view', array('tmc'=>'jkl', 'biz'=>123));
 echo '</table>';
 
 echo '<p><table><tr><th>Action</th><th>Context</th><th>Allowed?</th></tr>';
-actionTest('order_resend', array('tmc'=>'abc', 'business'=>123));       // TMC admin, any business
-actionTest('order_resend', array('tmc'=>'abc', 'business'=>999));       // TMC admin, any business
-actionTest('order_resend', array('tmc'=>'ghi', 'business'=>123));       // Business admin, business 123
-actionTest('order_resend', array('tmc'=>'ghi', 'business'=>123, 'email'=>'fred'));
-actionTest('order_resend', array('tmc'=>'ghi', 'business'=>123, 'email'=>'wilma'));
-actionTest('order_resend', array('tmc'=>'ghi', 'business'=>999));       // Business admin, business 123
+actionTest('order_resend', array('tmc'=>'abc', 'biz'=>123));       // TMC admin, any business
+actionTest('order_resend', array('tmc'=>'abc', 'biz'=>999));       // TMC admin, any business
+actionTest('order_resend', array('tmc'=>'ghi', 'biz'=>123));       // Business admin, business 123
+actionTest('order_resend', array('tmc'=>'ghi', 'biz'=>123, 'email'=>'fred@test.com'));
+actionTest('order_resend', array('tmc'=>'ghi', 'biz'=>123, 'email'=>'wilma@test.com'));
+actionTest('order_resend', array('tmc'=>'ghi', 'biz'=>999));       // Business admin, business 123
 
 // Business user, my email address
-actionTest('order_resend', array('tmc'=>'jkl', 'business'=>123, 'email'=>'fred'));
+actionTest('order_resend', array('tmc'=>'jkl', 'biz'=>123, 'email'=>'fred@test.com'));
 
 // Business user, not my email address
-actionTest('order_resend', array('tmc'=>'jkl', 'business'=>123, 'email'=>'wilma'));
+actionTest('order_resend', array('tmc'=>'jkl', 'biz'=>123, 'email'=>'wilma@test.com'));
 
 echo '</table>';
 
