@@ -46,26 +46,81 @@ class ChaperoneAction {
         // Look up Roles in the database
         $pdo = Chaperone::getPDO();
         $schema = Chaperone::databaseSchema;
-        $sql = 'SELECT      id, action
-                FROM        '.$schema.'.chaperone_action
-                WHERE       namespace = :namespace
-                ORDER BY    action';
+        $sql = 'SELECT      ca.id, ca.action, cars.rule_set
+                FROM        '.$schema.'.chaperone_action AS ca
+                JOIN        '.$schema.'.chaperone_action_rule_set AS cars ON cars.action = ca.id
+                WHERE       namespace = 1
+                ORDER BY    ca.action, cars.rule_set';
 
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':namespace', $namespaceId);
         $stmt->execute();
         
         $actionArray = array();
+        $assembleArray = NULL;
+        $previousId = NULL;
         if ($stmt->rowCount() > 0) {
             while ($actionRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $actionArray[] = $actionRow;
+                $actionId = (int)$actionRow['id'];
+
+                // If the action ID has changed, store what we've assembled so far and set up for the current action
+                if ($actionId !== $previousId) {
+                    
+                    // Don't store when we're on the first item
+                    if ($previousId !== NULL) {
+                        $actionArray[] = $assembleArray;
+                    }
+                    
+                    // Build array for current action
+                    $assembleArray = array('id'=>$actionId, 'action'=>$actionRow['action'], 'rules'=>array());
+                    $previousId = $actionId;
+                }
+                
+                // Get rules for ruleset
+                $assembleArray['rules'][] = ChaperoneRuleSet::loadById($actionRow['rule_set'])->getReadableRules();
             }
+            
+            // Push last item to the array, if there is one
+            if ($previousId !== NULL) {
+                $actionArray[] = $assembleArray;
+            }
+        }
+        
+        return $actionArray;
+    }
+
+
+    /*
+     * Get an array of Roles for the current action
+     */
+    public function getRoles() {
+        $pdo = Chaperone::getPDO();
+        $schema = Chaperone::databaseSchema;
+        $sql = 'SELECT      cr.id, cr.role
+                FROM        '.$schema.'.chaperone_role_action AS cra
+                JOIN        '.$schema.'.chaperone_role AS cr ON cr.id = cra.role
+                WHERE       cra.action = :action
+                AND         cr.namespace = :namespace
+                ORDER BY    cr.role';
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':action', $this->id);
+        $stmt->bindValue(':namespace', $this->namespaceId);
+
+        $stmt->execute();
+
+        $rowCount = $stmt->rowCount();
+        if ($rowCount === 0) {
+            return array();
+        }
+        $roleArray = array();
+        while ($roleRow = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $roleArray[] = array('id'=>$roleRow['id'], 'role'=>$this->namespace.'.'.$roleRow['role']);
         }
         
         return $roleArray;
     }
-    
-    
+
+
     /*
      * Loads an action by unique ID.  No caching
      */
