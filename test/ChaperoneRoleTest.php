@@ -71,7 +71,8 @@ class ChaperoneRoleTest extends PHPUnit_Framework_TestCase
                 FROM        global.chaperone_role_action AS cra
                 JOIN        global.chaperone_action AS ca ON ca.id = cra.action
                 WHERE       cra.role = :role
-                AND         ca.namespace = :namespace';
+                AND         ca.namespace = :namespace
+                ORDER BY    ca.action, ca.id';
 
         $helperMockPdoObj->addMockPdoFetchStatement($sql,
                                                     array(':namespace'=>1, ':role'=>1),
