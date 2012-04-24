@@ -104,9 +104,16 @@ class ChaperoneContextRuleSet {
             if (!array_key_exists($context_item, $supersetObj->ruleArray))
                 return FALSE;
 
-            // Wildcard rules must match.  Context rules can match or be a wildcard in the superset
-            if (($supersetObj->ruleArray[$context_item] !== $value) AND ($supersetObj->ruleArray[$context_item] !== NULL))
-                return FALSE;
+            // Wildcard rules must match
+            if ($value === NULL) {
+                if ($supersetObj->ruleArray[$context_item] !== NULL)
+                    return FALSE;
+
+            // Context rules can match or be a wildcard in the superset
+            } else {
+                if (($supersetObj->ruleArray[$context_item] !== NULL) AND ((string)$supersetObj->ruleArray[$context_item] !== (string)$value))
+                    return FALSE;
+            }
         }
 
         // Success!
