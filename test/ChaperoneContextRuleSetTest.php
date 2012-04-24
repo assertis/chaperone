@@ -567,5 +567,36 @@ class ChaperoneContextRuleSetTest extends PHPUnit_Framework_TestCase {
         $emptyObj = new ChaperoneContextRuleSet();
         $this->assertEquals($emptyObj->isSubsetOf($supersetObj), TRUE);
     }
+
+    
+    /*
+     * This tests that string and integer representations of the same value work correctly
+     */
+    public function testContextIsSubsetOfIntegerString() {
+        
+        // String and integer representations of 12345
+        $stringContextObj = new ChaperoneContextRuleSet();
+        $stringContextObj->addContextRule('aaa', '12345');
+
+        $integerContextObj = new ChaperoneContextRuleSet();
+        $integerContextObj->addContextRule('aaa', 12345);
+
+        $this->assertEquals($stringContextObj->isSubsetOf($integerContextObj), TRUE);
+
+        $this->assertEquals($integerContextObj->isSubsetOf($stringContextObj), TRUE);
+
+
+        // Ensure that an empty string does not evaluate to 0 (we are typecasting, not just doing == comparison)
+        $stringContextObj = new ChaperoneContextRuleSet();
+        $stringContextObj->addContextRule('aaa', '');
+
+        $integerContextObj = new ChaperoneContextRuleSet();
+        $integerContextObj->addContextRule('aaa', 0);
+
+        $this->assertEquals($stringContextObj->isSubsetOf($integerContextObj), FALSE);
+
+        $this->assertEquals($integerContextObj->isSubsetOf($stringContextObj), FALSE);
+
+    }
 }
 ?>
